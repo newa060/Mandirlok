@@ -2,6 +2,10 @@
 
 import { useState } from "react";
 import Link from "next/link";
+// import Navbar from "@/components/navbar/Navbar"; // Adjust this path to match your navbar folder structure
+// import Footer from "@/components/footer/Footer"; // Adjust this path to match your footer location
+import Navbar from "@/components/layout/Navbar";
+import Footer from "@/components/layout/Footer";
 
 // ── Data ──────────────────────────────────────────────────────────────────────
 const CATEGORIES = [
@@ -392,125 +396,40 @@ export default function TemplesPage() {
   });
 
   return (
-    <main className="min-h-screen bg-gray-50 font-sans">
-      <PageBanner />
+    <>
+      <Navbar />
+      <main className="min-h-screen bg-gray-50 font-sans">
+        <PageBanner />
 
-      {/* Filter Bar */}
-      <div className="sticky top-0 z-20 bg-white border-b border-gray-200 shadow-sm">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          {/* Category Tabs */}
-          <div className="flex gap-2 overflow-x-auto py-3 scrollbar-hide no-scrollbar">
-            {CATEGORIES.map((cat) => (
-              <button
-                key={cat}
-                onClick={() => setActiveCategory(cat)}
-                className={`shrink-0 px-4 py-1.5 rounded-full text-sm font-medium transition-all duration-200 whitespace-nowrap ${
-                  activeCategory === cat
-                    ? "bg-orange-500 text-white shadow-md"
-                    : "bg-gray-100 text-gray-600 hover:bg-gray-200"
-                }`}
-              >
-                {cat}
-              </button>
-            ))}
-          </div>
-        </div>
-      </div>
-
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Search + Filters Row */}
-        <div className="flex flex-wrap gap-4 items-center mb-8">
-          {/* Search */}
-          <div className="relative flex-1 min-w-[200px]">
-            <svg
-              className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-              />
-            </svg>
-            <input
-              type="text"
-              placeholder="Search temples, deities, locations..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-orange-300 focus:border-orange-300 bg-white"
-            />
-          </div>
-
-          {/* State Filter */}
-          <select
-            value={activeState}
-            onChange={(e) => setActiveState(e.target.value)}
-            className="px-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-orange-300 bg-white text-gray-700"
-          >
-            {STATES.map((s) => (
-              <option key={s}>{s}</option>
-            ))}
-          </select>
-
-          {/* Featured Toggle */}
-          <label className="flex items-center gap-2 cursor-pointer">
-            <div
-              className={`w-10 h-5 rounded-full transition-colors duration-200 relative ${showFeaturedOnly ? "bg-orange-500" : "bg-gray-200"}`}
-              onClick={() => setShowFeaturedOnly((v) => !v)}
-            >
-              <div
-                className={`absolute top-0.5 w-4 h-4 bg-white rounded-full shadow transition-transform duration-200 ${showFeaturedOnly ? "translate-x-5" : "translate-x-0.5"}`}
-              />
+        {/* Filter Bar */}
+        <div className="sticky top-0 z-20 bg-white border-b border-gray-200 shadow-sm">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            {/* Category Tabs */}
+            <div className="flex gap-2 overflow-x-auto py-3 scrollbar-hide no-scrollbar">
+              {CATEGORIES.map((cat) => (
+                <button
+                  key={cat}
+                  onClick={() => setActiveCategory(cat)}
+                  className={`shrink-0 px-4 py-1.5 rounded-full text-sm font-medium transition-all duration-200 whitespace-nowrap ${
+                    activeCategory === cat
+                      ? "bg-orange-500 text-white shadow-md"
+                      : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                  }`}
+                >
+                  {cat}
+                </button>
+              ))}
             </div>
-            <span className="text-sm text-gray-600 font-medium">
-              Featured Only
-            </span>
-          </label>
-
-          <span className="text-sm text-gray-400 ml-auto">
-            {filtered.length} temples found
-          </span>
+          </div>
         </div>
 
-        {/* Temple Grid */}
-        {filtered.length > 0 ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-            {filtered.map((temple) => (
-              <TempleCard key={temple.id} temple={temple} />
-            ))}
-          </div>
-        ) : (
-          <div className="text-center py-20">
-            <div className="text-6xl mb-4">🔍</div>
-            <h3 className="text-xl font-bold text-gray-700 mb-2">
-              No temples found
-            </h3>
-            <p className="text-gray-500 mb-6">
-              Try adjusting your filters or search query
-            </p>
-            <button
-              onClick={() => {
-                setSearch("");
-                setActiveCategory("All Temples");
-                setActiveState("All States");
-              }}
-              className="bg-orange-500 text-white px-6 py-2.5 rounded-full text-sm font-semibold hover:bg-orange-600 transition-colors"
-            >
-              Clear Filters
-            </button>
-          </div>
-        )}
-
-        {/* Load More */}
-        {filtered.length > 0 && (
-          <div className="text-center mt-12">
-            <button className="inline-flex items-center gap-2 border-2 border-orange-500 text-orange-600 hover:bg-orange-500 hover:text-white font-bold px-8 py-3 rounded-full transition-all duration-200">
-              Load More Temples
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          {/* Search + Filters Row */}
+          <div className="flex flex-wrap gap-4 items-center mb-8">
+            {/* Search */}
+            <div className="relative flex-1 min-w-[200px]">
               <svg
-                className="w-4 h-4"
+                className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -519,13 +438,102 @@ export default function TemplesPage() {
                   strokeLinecap="round"
                   strokeLinejoin="round"
                   strokeWidth={2}
-                  d="M19 9l-7 7-7-7"
+                  d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
                 />
               </svg>
-            </button>
+              <input
+                type="text"
+                placeholder="Search temples, deities, locations..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                className="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-orange-300 focus:border-orange-300 bg-white"
+              />
+            </div>
+
+            {/* State Filter */}
+            <select
+              value={activeState}
+              onChange={(e) => setActiveState(e.target.value)}
+              className="px-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-orange-300 bg-white text-gray-700"
+            >
+              {STATES.map((s) => (
+                <option key={s}>{s}</option>
+              ))}
+            </select>
+
+            {/* Featured Toggle */}
+            <label className="flex items-center gap-2 cursor-pointer">
+              <div
+                className={`w-10 h-5 rounded-full transition-colors duration-200 relative ${showFeaturedOnly ? "bg-orange-500" : "bg-gray-200"}`}
+                onClick={() => setShowFeaturedOnly((v) => !v)}
+              >
+                <div
+                  className={`absolute top-0.5 w-4 h-4 bg-white rounded-full shadow transition-transform duration-200 ${showFeaturedOnly ? "translate-x-5" : "translate-x-0.5"}`}
+                />
+              </div>
+              <span className="text-sm text-gray-600 font-medium">
+                Featured Only
+              </span>
+            </label>
+
+            <span className="text-sm text-gray-400 ml-auto">
+              {filtered.length} temples found
+            </span>
           </div>
-        )}
-      </div>
-    </main>
+
+          {/* Temple Grid */}
+          {filtered.length > 0 ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+              {filtered.map((temple) => (
+                <TempleCard key={temple.id} temple={temple} />
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-20">
+              <div className="text-6xl mb-4">🔍</div>
+              <h3 className="text-xl font-bold text-gray-700 mb-2">
+                No temples found
+              </h3>
+              <p className="text-gray-500 mb-6">
+                Try adjusting your filters or search query
+              </p>
+              <button
+                onClick={() => {
+                  setSearch("");
+                  setActiveCategory("All Temples");
+                  setActiveState("All States");
+                }}
+                className="bg-orange-500 text-white px-6 py-2.5 rounded-full text-sm font-semibold hover:bg-orange-600 transition-colors"
+              >
+                Clear Filters
+              </button>
+            </div>
+          )}
+
+          {/* Load More */}
+          {filtered.length > 0 && (
+            <div className="text-center mt-12">
+              <button className="inline-flex items-center gap-2 border-2 border-orange-500 text-orange-600 hover:bg-orange-500 hover:text-white font-bold px-8 py-3 rounded-full transition-all duration-200">
+                Load More Temples
+                <svg
+                  className="w-4 h-4"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M19 9l-7 7-7-7"
+                  />
+                </svg>
+              </button>
+            </div>
+          )}
+        </div>
+      </main>
+      <Footer />
+    </>
   );
 }

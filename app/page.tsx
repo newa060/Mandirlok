@@ -12,7 +12,7 @@ const SLIDE_IMAGES = [
     title: "Perform Your Puja with Mandirlok",
     subtitle:
       "Let your prayers reach the Divine through authentic Vedic rituals performed on your behalf at India's holiest temples.",
-    cta: "Book a Puja",
+    cta: "Participate in a Puja",
     ctaLink: "/poojas",
     secondary: "Explore Temples",
     secondaryLink: "/temples",
@@ -22,7 +22,7 @@ const SLIDE_IMAGES = [
     title: "Sacred Chadhava Offerings",
     subtitle:
       "Offer sacred items at renowned temples across India — from the comfort of your home.",
-    cta: "Book Chadhava",
+    cta: "Participate in Chadhava",
     ctaLink: "/chadhava",
     secondary: "View All Temples",
     secondaryLink: "/temples",
@@ -31,7 +31,7 @@ const SLIDE_IMAGES = [
     src: "https://upload.wikimedia.org/wikipedia/commons/thumb/8/8a/Mahakaleshwar_Jyotirlinga.jpg/1200px-Mahakaleshwar_Jyotirlinga.jpg",
     title: "Seek Divine Blessings Today",
     subtitle:
-      "Connect with 500+ temples. Book pujas, chadhava and receive videos of completed rituals delivered on WhatsApp.",
+      "Connect with 500+ temples. Participate in pujas, chadhava and receive videos of completed rituals delivered on WhatsApp.",
     cta: "Get Started",
     ctaLink: "/poojas",
     secondary: "How It Works",
@@ -42,7 +42,7 @@ const SLIDE_IMAGES = [
     title: "Experience Mata's Blessings",
     subtitle:
       "Can't travel to Mata Vaishno Devi? Let us carry your prayers to the divine abode in the Trikuta Mountains.",
-    cta: "Book Aarti Seva",
+    cta: "Participate in Aarti Seva",
     ctaLink: "/poojas",
     secondary: "Explore Devi Temples",
     secondaryLink: "/temples",
@@ -179,7 +179,7 @@ const FEATURES = [
   {
     icon: "📱",
     title: "Real-Time Updates",
-    desc: "Track your puja booking status and receive instant WhatsApp updates on ritual completion.",
+    desc: "Track your puja participation status and receive instant WhatsApp updates on ritual completion.",
   },
   {
     icon: "🎥",
@@ -189,11 +189,11 @@ const FEATURES = [
   {
     icon: "💬",
     title: "WhatsApp Support",
-    desc: "Dedicated support via WhatsApp for all booking queries, customization and post-puja questions.",
+    desc: "Dedicated support via WhatsApp for all participation queries, customization and post-puja questions.",
   },
   {
     icon: "🌍",
-    title: "Book from Anywhere",
+    title: "Participate from Anywhere",
     desc: "Devotees across 30+ countries trust Mandirlok to connect them with India's sacred temples.",
   },
 ];
@@ -202,7 +202,7 @@ const TESTIMONIALS = [
   {
     name: "Priya Sharma",
     city: "Delhi",
-    text: "I booked a Rudrabhishek at Mahakaleshwar for my father's health. The video was so moving. Our family felt truly connected to the divine.",
+    text: "I participated in a Rudrabhishek at Mahakaleshwar for my father's health. The video was so moving. Our family felt truly connected to the divine.",
     stars: 5,
     initials: "PS",
     color: "bg-orange-500",
@@ -210,7 +210,7 @@ const TESTIMONIALS = [
   {
     name: "Ramesh Nair",
     city: "Bangalore",
-    text: "The entire experience was seamless. From booking to receiving the video, everything was professional. Will definitely book again!",
+    text: "The entire experience was seamless. From participation to receiving the video, everything was professional. Will definitely participate again!",
     stars: 5,
     initials: "RN",
     color: "bg-rose-500",
@@ -218,7 +218,7 @@ const TESTIMONIALS = [
   {
     name: "Meena Gupta",
     city: "Mumbai",
-    text: "My son lives abroad and booked a puja at Tirupati for me. I received the video and felt Swami's blessings directly. Wonderful service.",
+    text: "My son lives abroad and participated in a puja at Tirupati for me. I received the video and felt Swami's blessings directly. Wonderful service.",
     stars: 5,
     initials: "MG",
     color: "bg-amber-500",
@@ -358,7 +358,7 @@ function PujaCard({ puja }: { puja: (typeof FEATURED_POOJAS)[0] }) {
           href="/poojas"
           className="w-full flex items-center justify-center gap-1.5 bg-orange-500 hover:bg-orange-600 text-white text-sm font-bold px-4 py-2.5 rounded-full transition-all duration-200 hover:shadow-lg hover:shadow-orange-200"
         >
-          Book Now
+          Participate Now
           <svg
             className="w-3.5 h-3.5"
             fill="none"
@@ -599,7 +599,7 @@ const MARQUEE_ITEMS = [
   { icon: "🔒", label: "100% Secure Payments" },
   { icon: "🛕", label: "500+ Sacred Temples" },
   { icon: "📹", label: "Video Proof of Every Puja" },
-  { icon: "⚡", label: "Booking in Under 2 Minutes" },
+  { icon: "⚡", label: "Participation in Under 2 Minutes" },
   { icon: "📿", label: "Authentic Vedic Rituals" },
   { icon: "🌍", label: "Devotees in 30+ Countries" },
   { icon: "💬", label: "WhatsApp Support 24/7" },
@@ -693,7 +693,7 @@ function HowItWorksSection() {
             href="/poojas"
             className="inline-flex items-center gap-2 bg-orange-500 hover:bg-orange-600 text-white font-bold px-10 py-4 rounded-full shadow-lg hover:shadow-orange-300/50 transition-all duration-200 hover:scale-105 text-base"
           >
-            Book Your First Puja
+            Participate in Your First Puja
             <svg
               className="w-5 h-5"
               fill="none"
@@ -833,7 +833,7 @@ export default function HomePage() {
             <SectionHeader
               tag="Mandirlok Special Pujas"
               title="Upcoming Sacred Pujas & Rituals"
-              subtitle="Book authentic pujas performed at India's most powerful temples. Receive a video within 24–48 hours."
+              subtitle="Participate in authentic pujas performed at India's most powerful temples. Receive a video within 24–48 hours."
             />
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-10">
               {FEATURED_POOJAS.map((puja, i) => (

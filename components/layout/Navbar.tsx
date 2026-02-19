@@ -118,7 +118,7 @@ export default function Navbar() {
               "🔒 100% Secure Payments",
               "🛕 500+ Sacred Temples",
               "📹 Video Proof Delivered",
-              "⚡ Book in 2 Minutes",
+              "⚡ Participate in 2 Minutes",
               "🌍 Devotees in 30+ Countries",
               "🎁 Prasad Home Delivery",
               "✅ 100% Authentic Rituals",
@@ -126,7 +126,7 @@ export default function Navbar() {
               "🔒 100% Secure Payments",
               "🛕 500+ Sacred Temples",
               "📹 Video Proof Delivered",
-              "⚡ Book in 2 Minutes",
+              "⚡ Participate in 2 Minutes",
               "🌍 Devotees in 30+ Countries",
               "🎁 Prasad Home Delivery",
               "✅ 100% Authentic Rituals",
@@ -267,23 +267,23 @@ export default function Navbar() {
                           },
                           {
                             icon: "📋",
-                            label: "My Puja Bookings",
+                            label: "My Puja Participations",
                             href: "/dashboard",
                           },
                           {
                             icon: "📋",
-                            label: "My Chadhava Bookings",
+                            label: "My Chadhava Participations",
                             href: "/dashboard",
                           },
                           {
                             icon: "🪔",
-                            label: "Book a Puja",
+                            label: "Participate in a Puja",
                             href: "/poojas",
                             badge: "New",
                           },
                           {
                             icon: "🙏",
-                            label: "Book a Chadhava",
+                            label: "Participate in Chadhava",
                             href: "/chadhava",
                             badge: "New",
                           },
@@ -379,7 +379,7 @@ export default function Navbar() {
                       {/* Help & Support */}
                       <div className="px-4 pb-4 border-t border-gray-100 pt-3 mt-1">
                         <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-2 px-1">
-                          Help & Support for Puja Booking
+                          Help & Support for Puja Participation
                         </p>
                         <div className="bg-gray-50 rounded-xl p-3 space-y-2">
                           <div className="flex items-center gap-2.5">
@@ -464,7 +464,7 @@ export default function Navbar() {
                 </div>
               ) : (
                 <>
-                  {/* Not logged in — show Login + Book Puja */}
+                  {/* Not logged in — show Login + Participate in Puja */}
                   <Link
                     href="/login"
                     className="btn-login relative flex items-center gap-2 px-5 py-2.5 rounded-xl border-2 border-orange-400 text-orange-600 text-sm font-bold transition-all duration-200 hover:bg-orange-50 hover:border-orange-500 hover:text-orange-700 hover:-translate-y-0.5 active:scale-95"
@@ -492,7 +492,7 @@ export default function Navbar() {
                       <span className="ping absolute inline-flex h-full w-full rounded-full bg-yellow-200 opacity-75"></span>
                       <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-yellow-100"></span>
                     </span>
-                    Book Puja
+                    Participate in Puja
                     <svg
                       className="w-4 h-4"
                       fill="none"
@@ -552,23 +552,23 @@ export default function Navbar() {
                             { icon: "👤", label: "My Profile", href: "/login" },
                             {
                               icon: "📋",
-                              label: "My Puja Bookings",
+                              label: "My Puja Participations",
                               href: "/login",
                             },
                             {
                               icon: "📋",
-                              label: "My Chadhava Bookings",
+                              label: "My Chadhava Participations",
                               href: "/login",
                             },
                             {
                               icon: "🪔",
-                              label: "Book a Puja",
+                              label: "Participate in a Puja",
                               href: "/poojas",
                               badge: "New",
                             },
                             {
                               icon: "🙏",
-                              label: "Book a Chadhava",
+                              label: "Participate in Chadhava",
                               href: "/chadhava",
                               badge: "New",
                             },
@@ -664,7 +664,7 @@ export default function Navbar() {
                         {/* Help */}
                         <div className="px-4 pb-4 border-t border-gray-100 pt-3 mt-1">
                           <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-2 px-1">
-                            Help & Support for Puja Booking
+                            Help & Support for Puja Participation
                           </p>
                           <div className="bg-gray-50 rounded-xl p-3 space-y-2">
                             <div className="flex items-center gap-2.5">
@@ -783,7 +783,7 @@ export default function Navbar() {
                   onClick={() => setMenuOpen(false)}
                   className="flex-1 btn-book flex items-center justify-center gap-2 py-2.5 rounded-xl text-white text-sm font-bold shadow-md"
                 >
-                  Book Puja 🙏
+                  Participate in Puja 🙏
                 </Link>
               </div>
             </div>
