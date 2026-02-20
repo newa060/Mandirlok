@@ -1,172 +1,69 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 
-const FILTERS = [
-  "All Pujas",
-  "Shiva",
-  "Vishnu",
-  "Devi",
-  "Ganesha",
-  "Surya",
-  "Navgraha",
-];
-const SORT_OPTIONS = ["Most Popular", "Upcoming Date", "A-Z"];
+// ── Types ─────────────────────────────────────────────────────────────────────
+interface Temple {
+  _id: string;
+  name: string;
+  location: string;
+  slug: string;
+}
 
-const POOJAS = [
-  {
-    id: "mahakaleshwar-rudrabhishek",
-    title: "Mahakaleshwar Rudrabhishek & Bhasma Aarti",
-    temple: "Shri Mahakaleshwar Jyotirlinga, Ujjain, MP",
-    date: "Every Monday, Maha Shivratri",
-    deity: "Shiva",
-    description:
-      "The most powerful Rudrabhishek performed at the only south-facing Jyotirlinga. Bhasma Aarti is offered at dawn. Performed in your name sankalp by temple priests.",
-    tag: "MOST POPULAR",
-    tagColor: "bg-orange-500",
-    benefits: [
-      "Peace & prosperity",
-      "Health & longevity",
-      "Removal of obstacles",
-    ],
-    duration: "2 hours",
-  },
-  {
-    id: "kashi-rudrabhishek",
-    title: "Kashi Vishwanath Rudrabhishek",
-    temple: "Shri Kashi Vishwanath Temple, Varanasi, UP",
-    date: "Every Monday & Pradosh Tithi",
-    deity: "Shiva",
-    description:
-      "A sacred Rudrabhishek on the banks of the holy Ganga at one of India's most powerful Shiva temples. Receive blessings of Moksha and divine grace.",
-    tag: "TRENDING",
-    tagColor: "bg-amber-500",
-    benefits: ["Moksha blessings", "Kaal Sarp dosh remedy", "Pitru shanti"],
-    duration: "1.5 hours",
-  },
-  {
-    id: "tirupati-archana",
-    title: "Tirupati Balaji Vishesh Archana",
-    temple: "Sri Venkateswara Temple, Tirupati, AP",
-    date: "Every Day",
-    deity: "Vishnu",
-    description:
-      "Special Archana at the world's most visited temple. Sahasranama Archana performed with 1008 names of Lord Venkateswara for wealth and wish fulfilment.",
-    tag: "SPECIAL OFFER",
-    tagColor: "bg-rose-500",
-    benefits: ["Wealth & prosperity", "Wish fulfilment", "Marriage blessings"],
-    duration: "45 mins",
-  },
-  {
-    id: "siddhivinayak-puja",
-    title: "Siddhivinayak Maha Abhishek",
-    temple: "Shree Siddhivinayak Temple, Mumbai, MH",
-    date: "Every Wednesday",
-    deity: "Ganesha",
-    description:
-      "Maha Abhishek and Archana at the most celebrated Ganesha temple in Maharashtra. Perfect for new beginnings, career success and business growth.",
-    tag: "NEW",
-    tagColor: "bg-teal-500",
-    benefits: ["Business success", "Education blessings", "Obstacle removal"],
-    duration: "1 hour",
-  },
-  {
-    id: "bagalamukhi-havan",
-    title: "Bagalamukhi Havan & Chadhava",
-    temple: "Maa Baglamukhi Pitambara Peeth, Datia, MP",
-    date: "Every Tuesday",
-    deity: "Devi",
-    description:
-      "For victory over enemies and relief from legal issues. Havan performed by experienced purohitjis with full Vedic procedures.",
-    tag: "POWERFUL",
-    tagColor: "bg-purple-500",
-    benefits: [
-      "Victory over enemies",
-      "Court case relief",
-      "Protection from evil",
-    ],
-    duration: "3 hours",
-  },
-  {
-    id: "navgraha-puja",
-    title: "Navgrah Shanti Maha Puja",
-    temple: "Shri Navagraha Shani Mandir, Ujjain, MP",
-    date: "Every Saturday",
-    deity: "Navgraha",
-    description:
-      "Complete Navgraha Shanti puja to pacify all 9 planetary energies. Ideal for people experiencing Shani Sade Saati, Rahu/Ketu dasha.",
-    tag: "",
-    tagColor: "",
-    benefits: ["Sade Saati relief", "Dasha shanti", "Career growth"],
-    duration: "2.5 hours",
-  },
-  {
-    id: "vaishno-devi-aarti",
-    title: "Mata Vaishno Devi Aarti Seva",
-    temple: "Shri Mata Vaishno Devi Bhavan, Katra",
-    date: "Every Friday & Navratri",
-    deity: "Devi",
-    description:
-      "Special Aarti and Chadhava at the most visited Shakti shrine in northern India. Receive blessings of Mata for health, protection and prosperity.",
-    tag: "",
-    tagColor: "",
-    benefits: ["Divine protection", "Health blessings", "Family well-being"],
-    duration: "1 hour",
-  },
-  {
-    id: "surya-puja",
-    title: "Surya Sankranti Mahaseva",
-    temple: "Shri Galtaji Surya Temple, Jaipur, RJ",
-    date: "Every Sunday & Sankranti",
-    deity: "Surya",
-    description:
-      "Worship the Sun God on his most powerful day for career success, government favour and health. Offered at the ancient Galtaji Surya Temple.",
-    tag: "",
-    tagColor: "",
-    benefits: [
-      "Government job success",
-      "Health & vitality",
-      "Leadership qualities",
-    ],
-    duration: "1.5 hours",
-  },
-  {
-    id: "hanuman-chadhava",
-    title: "Hanuman Garhi Special Chadhava",
-    temple: "Shri Hanuman Garhi Temple, Ayodhya, UP",
-    date: "Every Tuesday & Saturday",
-    deity: "Shiva",
-    description:
-      "Sacred offering at Hanuman Garhi — the divine protector's abode. For protection from negative energies, strength and victory in all endeavours.",
-    tag: "",
-    tagColor: "",
-    benefits: ["Protection from evil", "Courage & strength", "Shani shanti"],
-    duration: "45 mins",
-  },
-];
+interface Pooja {
+  _id: string;
+  name: string;
+  slug: string;
+  templeId: Temple;
+  deity: string;
+  emoji: string;
+  description: string;
+  price: number;
+  duration: string;
+  benefits: string[];
+  tag: string;
+  tagColor: string;
+  rating: number;
+  totalReviews: number;
+  availableDays: string;
+  images: string[];
+}
 
-function PujaCard({ puja }: { puja: (typeof POOJAS)[0] }) {
+// ── Constants ─────────────────────────────────────────────────────────────────
+const FILTERS      = ["All Pujas", "Shiva", "Vishnu", "Devi", "Ganesha", "Surya", "Navgraha"];
+const SORT_OPTIONS = ["Most Popular", "Price: Low to High", "Price: High to Low", "A-Z"];
+
+// ── Puja Card ─────────────────────────────────────────────────────────────────
+function PujaCard({ puja }: { puja: Pooja }) {
   return (
     <div className="group bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300 hover:-translate-y-1 border border-gray-100 flex flex-col">
       {/* Image Area */}
       <div className="relative h-52 overflow-hidden bg-gradient-to-br from-orange-800/60 to-red-900/70 flex items-center justify-center">
-        <div
-          className="absolute inset-0 opacity-10"
-          style={{
-            backgroundImage:
-              "url(\"data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='1'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E\")",
-          }}
-        />
-        <span className="text-5xl group-hover:scale-110 transition-transform duration-500 relative z-10">
-          🙏
-        </span>
+        {puja.images?.[0] ? (
+          <img
+            src={puja.images[0]}
+            alt={puja.name}
+            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+          />
+        ) : (
+          <>
+            <div
+              className="absolute inset-0 opacity-10"
+              style={{
+                backgroundImage:
+                  "url(\"data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='1'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E\")",
+              }}
+            />
+            <span className="text-5xl group-hover:scale-110 transition-transform duration-500 relative z-10">
+              {puja.emoji || "🙏"}
+            </span>
+          </>
+        )}
         {puja.tag && (
-          <span
-            className={`absolute top-3 left-3 ${puja.tagColor} text-white text-xs font-bold px-3 py-1 rounded-full`}
-          >
+          <span className={`absolute top-3 left-3 ${puja.tagColor} text-white text-xs font-bold px-3 py-1 rounded-full`}>
             {puja.tag}
           </span>
         )}
@@ -180,41 +77,21 @@ function PujaCard({ puja }: { puja: (typeof POOJAS)[0] }) {
       {/* Content */}
       <div className="p-5 flex flex-col flex-1">
         <h3 className="font-bold text-gray-900 text-base mb-2 line-clamp-2 leading-snug">
-          {puja.title}
+          {puja.name}
         </h3>
 
         <div className="flex items-start gap-1.5 mb-1.5">
-          <svg
-            className="w-3.5 h-3.5 text-orange-400 mt-0.5 shrink-0"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"
-            />
+          <svg className="w-3.5 h-3.5 text-orange-400 mt-0.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
           </svg>
-          <p className="text-xs text-gray-500 line-clamp-1">{puja.temple}</p>
+          <p className="text-xs text-gray-500 line-clamp-1">{puja.templeId?.name}</p>
         </div>
 
         <div className="flex items-center gap-1.5 mb-3">
-          <svg
-            className="w-3.5 h-3.5 text-orange-400 shrink-0"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
-            />
+          <svg className="w-3.5 h-3.5 text-orange-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
           </svg>
-          <p className="text-xs text-gray-500 font-medium">{puja.date}</p>
+          <p className="text-xs text-gray-500 font-medium">{puja.availableDays}</p>
         </div>
 
         <p className="text-xs text-gray-600 mb-4 line-clamp-2 leading-relaxed flex-1">
@@ -223,51 +100,26 @@ function PujaCard({ puja }: { puja: (typeof POOJAS)[0] }) {
 
         {/* Benefits */}
         <div className="flex flex-wrap gap-1.5 mb-4">
-          {puja.benefits.slice(0, 2).map((b) => (
-            <span
-              key={b}
-              className="bg-orange-50 text-orange-700 text-xs px-2 py-0.5 rounded-full border border-orange-100"
-            >
+          {puja.benefits?.slice(0, 2).map((b) => (
+            <span key={b} className="bg-orange-50 text-orange-700 text-xs px-2 py-0.5 rounded-full border border-orange-100">
               ✓ {b}
             </span>
           ))}
         </div>
 
-        {/* Duration + CTA */}
+        {/* Price + Duration + CTA */}
         <div className="flex items-center justify-between pt-3 border-t border-gray-100 mt-auto">
-          <div className="flex items-center gap-1.5 text-xs text-gray-500">
-            <svg
-              className="w-3.5 h-3.5 text-orange-400"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
-              />
-            </svg>
-            {puja.duration}
+          <div>
+            <p className="text-lg font-bold text-orange-600">₹{puja.price?.toLocaleString()}</p>
+            <p className="text-xs text-gray-400">{puja.duration}</p>
           </div>
           <Link
-            href={`/poojas/${puja.id}`}
+            href={`/poojas/${puja.slug || puja._id}`}
             className="inline-flex items-center gap-1.5 bg-orange-500 hover:bg-orange-600 text-white text-sm font-bold px-5 py-2.5 rounded-full transition-all duration-200 hover:shadow-lg hover:shadow-orange-200"
           >
             PARTICIPATE
-            <svg
-              className="w-3.5 h-3.5"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M17 8l4 4m0 0l-4 4m4-4H3"
-              />
+            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
             </svg>
           </Link>
         </div>
@@ -276,6 +128,22 @@ function PujaCard({ puja }: { puja: (typeof POOJAS)[0] }) {
   );
 }
 
+// ── Skeleton Card ─────────────────────────────────────────────────────────────
+function SkeletonCard() {
+  return (
+    <div className="bg-white rounded-2xl overflow-hidden border border-gray-100 animate-pulse">
+      <div className="h-52 bg-gray-200" />
+      <div className="p-5 space-y-3">
+        <div className="h-4 bg-gray-200 rounded w-3/4" />
+        <div className="h-3 bg-gray-200 rounded w-1/2" />
+        <div className="h-3 bg-gray-200 rounded w-full" />
+        <div className="h-8 bg-gray-200 rounded w-full mt-4" />
+      </div>
+    </div>
+  );
+}
+
+// ── Page Banner ───────────────────────────────────────────────────────────────
 function PageBanner() {
   return (
     <section className="relative h-64 md:h-80 overflow-hidden">
@@ -298,8 +166,8 @@ function PageBanner() {
             Mandirlok Chadhava Seva
           </h1>
           <p className="text-white/80 text-base max-w-xl leading-relaxed">
-            Make sacred offerings at India's most powerful temples on your
-            behalf. Connect with the divine from anywhere in the world.
+            Make sacred offerings at India's most powerful temples on your behalf.
+            Connect with the divine from anywhere in the world.
           </p>
         </div>
       </div>
@@ -307,28 +175,13 @@ function PageBanner() {
   );
 }
 
+// ── How It Works Banner ───────────────────────────────────────────────────────
 function HowItWorksBanner() {
   const steps = [
-    {
-      icon: "🛕",
-      title: "Choose Temple",
-      desc: "Select from 500+ sacred temples across India",
-    },
-    {
-      icon: "✍️",
-      title: "Enter Your Name",
-      desc: "Panditji will chant your name in the Sankalp",
-    },
-    {
-      icon: "💳",
-      title: "Secure Payment",
-      desc: "Pay securely after discussing with pandit",
-    },
-    {
-      icon: "📹",
-      title: "Get Puja Video",
-      desc: "Receive the video proof within 24–48 hrs",
-    },
+    { icon: "🛕", title: "Choose Temple",   desc: "Select from 500+ sacred temples across India" },
+    { icon: "✍️", title: "Enter Your Name", desc: "Panditji will chant your name in the Sankalp" },
+    { icon: "💳", title: "Secure Payment",  desc: "Pay securely after discussing with pandit" },
+    { icon: "📹", title: "Get Puja Video",  desc: "Receive the video proof within 24–48 hrs" },
   ];
   return (
     <div className="bg-gradient-to-br from-orange-50 to-amber-50 border-b border-orange-100 py-8">
@@ -340,12 +193,8 @@ function HowItWorksBanner() {
                 {s.icon}
               </div>
               <div>
-                <h4 className="font-bold text-gray-900 text-sm mb-0.5">
-                  {s.title}
-                </h4>
-                <p className="text-gray-500 text-xs leading-relaxed">
-                  {s.desc}
-                </p>
+                <h4 className="font-bold text-gray-900 text-sm mb-0.5">{s.title}</h4>
+                <p className="text-gray-500 text-xs leading-relaxed">{s.desc}</p>
               </div>
             </div>
           ))}
@@ -355,20 +204,50 @@ function HowItWorksBanner() {
   );
 }
 
+// ── Main Export ───────────────────────────────────────────────────────────────
 export default function ChadhavaPage() {
+  const [poojas,       setPoojas]       = useState<Pooja[]>([]);
+  const [loading,      setLoading]      = useState(true);
+  const [error,        setError]        = useState("");
   const [activeFilter, setActiveFilter] = useState("All Pujas");
-  const [sortBy, setSortBy] = useState("Most Popular");
-  const [search, setSearch] = useState("");
+  const [sortBy,       setSortBy]       = useState("Most Popular");
+  const [search,       setSearch]       = useState("");
 
-  const filtered = POOJAS.filter((p) => {
-    const matchFilter =
-      activeFilter === "All Pujas" || p.deity === activeFilter;
-    const matchSearch =
-      !search ||
-      p.title.toLowerCase().includes(search.toLowerCase()) ||
-      p.temple.toLowerCase().includes(search.toLowerCase());
-    return matchFilter && matchSearch;
-  });
+  // Fetch poojas from API (chadhava page shows same poojas — just different banner)
+  useEffect(() => {
+    const fetchPoojas = async () => {
+      setLoading(true);
+      setError("");
+      try {
+        const params = new URLSearchParams();
+        if (activeFilter !== "All Pujas") params.set("deity",  activeFilter);
+        if (search)                        params.set("search", search);
+
+        const res  = await fetch(`/api/poojas?${params.toString()}`);
+        const data = await res.json();
+
+        if (data.success) {
+          let result: Pooja[] = data.data;
+
+          // Client-side sorting
+          if (sortBy === "Price: Low to High") result = [...result].sort((a, b) => a.price - b.price);
+          if (sortBy === "Price: High to Low") result = [...result].sort((a, b) => b.price - a.price);
+          if (sortBy === "A-Z")                result = [...result].sort((a, b) => a.name.localeCompare(b.name));
+
+          setPoojas(result);
+        } else {
+          setError("Failed to load chadhava seva.");
+        }
+      } catch {
+        setError("Something went wrong. Please try again.");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    const timer = setTimeout(fetchPoojas, search ? 400 : 0);
+    return () => clearTimeout(timer);
+  }, [activeFilter, sortBy, search]);
 
   return (
     <>
@@ -399,21 +278,12 @@ export default function ChadhavaPage() {
         </div>
 
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+
           {/* Search + Sort */}
           <div className="flex flex-wrap gap-4 items-center mb-8">
             <div className="relative flex-1 min-w-[200px]">
-              <svg
-                className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-                />
+              <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
               </svg>
               <input
                 type="text"
@@ -428,59 +298,51 @@ export default function ChadhavaPage() {
               onChange={(e) => setSortBy(e.target.value)}
               className="px-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-orange-300 bg-white text-gray-700"
             >
-              {SORT_OPTIONS.map((s) => (
-                <option key={s}>{s}</option>
-              ))}
+              {SORT_OPTIONS.map((s) => <option key={s}>{s}</option>)}
             </select>
             <span className="text-sm text-gray-400 ml-auto">
-              {filtered.length} pujas found
+              {loading ? "Loading..." : `${poojas.length} seva found`}
             </span>
           </div>
 
-          {filtered.length > 0 ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-              {filtered.map((puja) => (
-                <PujaCard key={puja.id} puja={puja} />
-              ))}
-            </div>
-          ) : (
-            <div className="text-center py-20">
-              <div className="text-6xl mb-4">🙏</div>
-              <h3 className="text-xl font-bold text-gray-700 mb-2">
-                No pujas found
-              </h3>
-              <p className="text-gray-500 mb-6">
-                Try a different filter or search keyword
-              </p>
+          {/* Error */}
+          {error && (
+            <div className="text-center py-10">
+              <p className="text-red-500 text-sm mb-4">{error}</p>
               <button
-                onClick={() => {
-                  setSearch("");
-                  setActiveFilter("All Pujas");
-                }}
-                className="bg-orange-500 text-white px-6 py-2.5 rounded-full text-sm font-semibold hover:bg-orange-600 transition-colors"
+                onClick={() => { setSearch(""); setActiveFilter("All Pujas"); }}
+                className="bg-orange-500 text-white px-6 py-2.5 rounded-full text-sm font-semibold"
               >
-                Clear Filters
+                Try Again
               </button>
             </div>
           )}
 
-          {filtered.length > 0 && (
-            <div className="text-center mt-12">
-              <button className="inline-flex items-center gap-2 border-2 border-orange-500 text-orange-600 hover:bg-orange-500 hover:text-white font-bold px-8 py-3 rounded-full transition-all duration-200">
-                Load More
-                <svg
-                  className="w-4 h-4"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M19 9l-7 7-7-7"
-                  />
-                </svg>
+          {/* Loading Skeletons */}
+          {loading && !error && (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+              {Array.from({ length: 6 }).map((_, i) => <SkeletonCard key={i} />)}
+            </div>
+          )}
+
+          {/* Puja Grid */}
+          {!loading && !error && poojas.length > 0 && (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+              {poojas.map((puja) => <PujaCard key={puja._id} puja={puja} />)}
+            </div>
+          )}
+
+          {/* Empty State */}
+          {!loading && !error && poojas.length === 0 && (
+            <div className="text-center py-20">
+              <div className="text-6xl mb-4">🙏</div>
+              <h3 className="text-xl font-bold text-gray-700 mb-2">No seva found</h3>
+              <p className="text-gray-500 mb-6">Try a different filter or search keyword</p>
+              <button
+                onClick={() => { setSearch(""); setActiveFilter("All Pujas"); }}
+                className="bg-orange-500 text-white px-6 py-2.5 rounded-full text-sm font-semibold hover:bg-orange-600 transition-colors"
+              >
+                Clear Filters
               </button>
             </div>
           )}
