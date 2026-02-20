@@ -265,7 +265,7 @@ export default function TempleDetailPage({
                 </div>
               </div>
 
-              {/* Chadhava */}
+              {/* Chadhava - Price tag removed from offerings */}
               <div>
                 <h2 className="font-display font-semibold text-[#1a1209] mb-4">
                   Chadhava Offerings
@@ -280,9 +280,7 @@ export default function TempleDetailPage({
                       <p className="text-xs font-semibold text-[#1a1209] mb-1">
                         {item.name}
                       </p>
-                      <p className="text-sm font-bold text-[#ff7f0a] mb-2">
-                        ₹{item.price}
-                      </p>
+                      {/* Price tag removed from here */}
                       <Link
                         href="/chadhava"
                         className="block bg-gradient-to-r from-[#ff7f0a] to-[#ff9b30] text-white text-[10px] font-bold py-1.5 rounded-full hover:shadow-sm transition-all"
@@ -362,10 +360,10 @@ export default function TempleDetailPage({
 
             {/* ── RIGHT SIDEBAR ── */}
             <div className="space-y-5">
-              {/* Quick Book */}
+              {/* Quick Book - Button text changed */}
               <div className="bg-white border border-[#f0dcc8] rounded-2xl p-5 shadow-card sticky top-24">
                 <h3 className="font-display font-semibold text-[#1a1209] mb-4">
-                  Book a Pooja
+                  Participate in a Pooja
                 </h3>
                 <div className="space-y-2 mb-5">
                   {templePoojas.slice(0, 4).map((p) => (
@@ -385,9 +383,7 @@ export default function TempleDetailPage({
                           </p>
                         </div>
                       </div>
-                      <span className="text-sm font-bold text-[#ff7f0a]">
-                        ₹{p.price.toLocaleString()}
-                      </span>
+                      {/* Price tag removed from here */}
                     </Link>
                   ))}
                 </div>
@@ -395,7 +391,7 @@ export default function TempleDetailPage({
                   href={`/poojas/${temple.poojaIds[0]}`}
                   className="w-full block text-center bg-gradient-to-r from-[#ff7f0a] to-[#ff9b30] text-white font-semibold text-sm py-3 rounded-xl shadow-[0_4px_15px_rgba(255,127,10,0.3)] hover:shadow-[0_6px_25px_rgba(255,127,10,0.45)] transition-all mb-3"
                 >
-                  🙏 Book a Pooja
+                  🙏 Participate in a Pooja
                 </Link>
                 <Link
                   href="/chadhava"
@@ -411,7 +407,7 @@ export default function TempleDetailPage({
               {/* Trust Box */}
               <div className="bg-[#fff8f0] border border-[#ffd9a8] rounded-2xl p-5">
                 <h4 className="font-semibold text-[#1a1209] text-sm mb-3">
-                  Why Book with Mandirlok?
+                  Why Participate with Mandirlok?
                 </h4>
                 {[
                   "✅ Verified, experienced pandits only",

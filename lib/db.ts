@@ -6,6 +6,16 @@ if (!MONGODB_URI) {
   throw new Error("Please define MONGODB_URI in .env.local");
 }
 
+
+import "../models/Temple";
+import "../models/Pooja";
+import "../models/Chadhava";
+import "../models/Order";
+import "../models/User";
+import "../models/Otp";
+import "../models/Review";
+import "../models/Payout";
+
 let cached = (global as any).mongoose;
 
 if (!cached) {
