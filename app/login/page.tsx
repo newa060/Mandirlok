@@ -113,7 +113,7 @@ export default function LoginPage() {
       if (data.success) {
         // If user already has a name, go home; otherwise collect name
         if (data.hasName) {
-          window.location.href = "/";
+          window.location.href = "/dashboard";
         } else {
           setStep("name");
         }
@@ -147,7 +147,7 @@ export default function LoginPage() {
       });
       const data = await res.json();
       if (data.success) {
-        window.location.href = "/";
+        window.location.href = "/dashboard";
       } else {
         setError(data.message || "Failed to save name. Please try again.");
         triggerShake();
