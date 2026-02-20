@@ -8,7 +8,6 @@ export async function GET() {
   try {
     await connectDB();
 
-    // 1. Auth check
     const token = cookies().get("mandirlok_token")?.value;
     if (!token) {
       return NextResponse.json(
@@ -27,12 +26,11 @@ export async function GET() {
       );
     }
 
-    // 2. Fetch orders with pooja and temple details
     const orders = await Order.find({ userId: decoded.userId })
-      .populate("poojaId",  "name emoji duration")
+      .populate("poojaId", "name emoji duration")
       .populate("templeId", "name location")
-      .populate("panditId", "name phone")
-      .sort({ createdAt: -1 }); // newest first
+      // panditId skipped — no Pandit model registered yet
+      .sort({ createdAt: -1 });
 
     return NextResponse.json({ success: true, data: orders });
   } catch (error) {

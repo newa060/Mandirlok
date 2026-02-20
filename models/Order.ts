@@ -115,16 +115,16 @@ const OrderSchema = new Schema<IOrder>(
   { timestamps: true }
 );
 
-// Auto-generate bookingId before save  e.g. BK-1045
+// Auto-generate a collision-safe bookingId before save  e.g. BK-1735012345-A3F
+// Using timestamp + random suffix instead of countDocuments() to avoid race conditions
+// that caused duplicate-key errors and prevented multiple orders from being saved.
 (OrderSchema as any).pre("save", function (this: IOrder, next: (err?: mongoose.CallbackError) => void) {
   if (!this.bookingId) {
-    mongoose.model("Order").countDocuments().then((count: number) => {
-      this.bookingId = `BK-${1000 + count + 1}`;
-      next();
-    }).catch((err) => next(err));
-  } else {
-    next();
+    const timestamp = Date.now().toString(36).toUpperCase();          // base-36 timestamp
+    const suffix = Math.random().toString(36).slice(2, 6).toUpperCase(); // 4-char random
+    this.bookingId = `BK-${timestamp}-${suffix}`;
   }
+  next();
 });
 
 const Order: Model<IOrder> =
