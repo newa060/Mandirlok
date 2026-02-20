@@ -18,13 +18,11 @@ const SPIRITUAL_WORDS = [
   "Devotional",
 ];
 
-// Mock: set to true to simulate logged-in state
-const IS_LOGGED_IN = false;
-const MOCK_USER = {
-  name: "Priya Sharma",
-  email: "priya@gmail.com",
-  initials: "PS",
-};
+interface UserInfo {
+  name: string;
+  email: string;
+  initials: string;
+}
 
 export default function Navbar() {
   const [menuOpen, setMenuOpen] = useState(false);
@@ -32,7 +30,45 @@ export default function Navbar() {
   const [wordIndex, setWordIndex] = useState(0);
   const [wordVisible, setWordVisible] = useState(true);
   const [profileOpen, setProfileOpen] = useState(false);
+  const [user, setUser] = useState<UserInfo | null>(null);
+  const [authLoading, setAuthLoading] = useState(true);
   const profileRef = useRef<HTMLDivElement>(null);
+
+  // ── Check auth on mount ──
+  useEffect(() => {
+    const checkAuth = async () => {
+      try {
+        const res = await fetch("/api/auth/me");
+        if (res.ok) {
+          const data = await res.json();
+          const name = data.user?.name || data.user?.email?.split("@")[0] || "User";
+          const email = data.user?.email || "";
+          const initials = name
+            .split(" ")
+            .map((n: string) => n[0])
+            .join("")
+            .toUpperCase()
+            .slice(0, 2);
+          setUser({ name, email, initials });
+        } else {
+          setUser(null);
+        }
+      } catch {
+        setUser(null);
+      } finally {
+        setAuthLoading(false);
+      }
+    };
+    checkAuth();
+  }, []);
+
+  // ── Logout ──
+  const handleLogout = async () => {
+    await fetch("/api/auth/logout", { method: "POST" });
+    setUser(null);
+    setProfileOpen(false);
+    window.location.href = "/";
+  };
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 10);
@@ -51,19 +87,17 @@ export default function Navbar() {
     return () => clearInterval(interval);
   }, []);
 
-  // Close profile dropdown on outside click
   useEffect(() => {
     const handler = (e: MouseEvent) => {
-      if (
-        profileRef.current &&
-        !profileRef.current.contains(e.target as Node)
-      ) {
+      if (profileRef.current && !profileRef.current.contains(e.target as Node)) {
         setProfileOpen(false);
       }
     };
     document.addEventListener("mousedown", handler);
     return () => document.removeEventListener("mousedown", handler);
   }, []);
+
+  const IS_LOGGED_IN = !!user;
 
   return (
     <>
@@ -94,6 +128,7 @@ export default function Navbar() {
         .nav-link:hover::after { width:100%; }
       `}</style>
 
+      {/* TOP MARQUEE BAR */}
       <div className="bg-gradient-to-r from-[#7c1a00] via-[#a32200] to-[#7c1a00] text-white text-xs overflow-hidden h-8 flex items-center relative">
         <div className="absolute left-4 z-10 flex items-center gap-2 bg-white/10 backdrop-blur-sm px-3 py-0.5 rounded-full border border-white/20 shrink-0">
           <span className="text-yellow-300">✦</span>
@@ -107,36 +142,20 @@ export default function Navbar() {
           >
             {SPIRITUAL_WORDS[wordIndex]}
           </span>
-          <span className="text-white/70 font-medium hidden sm:inline">
-            Services
-          </span>
+          <span className="text-white/70 font-medium hidden sm:inline">Services</span>
         </div>
         <div className="flex whitespace-nowrap ml-48">
           <div className="top-marquee flex items-center gap-0">
             {[
-              "🙏 Trusted by 1 Million+ Devotees",
-              "🔒 100% Secure Payments",
-              "🛕 500+ Sacred Temples",
-              "📹 Video Proof Delivered",
-              "⚡ Participate in 2 Minutes",
-              "🌍 Devotees in 30+ Countries",
-              "🎁 Prasad Home Delivery",
-              "✅ 100% Authentic Rituals",
-              "🙏 Trusted by 1 Million+ Devotees",
-              "🔒 100% Secure Payments",
-              "🛕 500+ Sacred Temples",
-              "📹 Video Proof Delivered",
-              "⚡ Participate in 2 Minutes",
-              "🌍 Devotees in 30+ Countries",
-              "🎁 Prasad Home Delivery",
-              "✅ 100% Authentic Rituals",
+              "🙏 Trusted by 1 Million+ Devotees","🔒 100% Secure Payments","🛕 500+ Sacred Temples",
+              "📹 Video Proof Delivered","⚡ Participate in 2 Minutes","🌍 Devotees in 30+ Countries",
+              "🎁 Prasad Home Delivery","✅ 100% Authentic Rituals",
+              "🙏 Trusted by 1 Million+ Devotees","🔒 100% Secure Payments","🛕 500+ Sacred Temples",
+              "📹 Video Proof Delivered","⚡ Participate in 2 Minutes","🌍 Devotees in 30+ Countries",
+              "🎁 Prasad Home Delivery","✅ 100% Authentic Rituals",
             ].map((item, i) => (
-              <span
-                key={i}
-                className="flex items-center gap-5 px-6 text-white/90 font-medium text-[11px]"
-              >
-                {item}
-                <span className="text-orange-300/50">·</span>
+              <span key={i} className="flex items-center gap-5 px-6 text-white/90 font-medium text-[11px]">
+                {item}<span className="text-orange-300/50">·</span>
               </span>
             ))}
           </div>
@@ -155,23 +174,18 @@ export default function Navbar() {
       </div>
 
       {/* MAIN NAVBAR */}
-      <nav
-        className={`sticky top-0 z-50 bg-white transition-all duration-300 ${scrolled ? "shadow-[0_2px_20px_rgba(0,0,0,0.12)]" : "border-b border-orange-100"}`}
-      >
+      <nav className={`sticky top-0 z-50 bg-white transition-all duration-300 ${scrolled ? "shadow-[0_2px_20px_rgba(0,0,0,0.12)]" : "border-b border-orange-100"}`}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
+
             {/* LOGO */}
             <Link href="/" className="flex items-center gap-2.5 group shrink-0">
               <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-orange-500 to-rose-600 flex items-center justify-center text-white text-lg shadow-md group-hover:shadow-orange-300/50 transition-all duration-300 group-hover:scale-110">
                 🛕
               </div>
               <div className="flex flex-col leading-none">
-                <span className="text-[15px] font-extrabold text-[#1a0500] tracking-tight">
-                  Mandirlok
-                </span>
-                <span className="text-[10px] text-orange-500 font-semibold tracking-widest uppercase">
-                  Sacred Services
-                </span>
+                <span className="text-[15px] font-extrabold text-[#1a0500] tracking-tight">Mandirlok</span>
+                <span className="text-[10px] text-orange-500 font-semibold tracking-widest uppercase">Sacred Services</span>
               </div>
             </Link>
 
@@ -188,107 +202,55 @@ export default function Navbar() {
               ))}
             </div>
 
-            {/* DESKTOP CTA BUTTONS */}
+            {/* DESKTOP CTA */}
             <div className="hidden md:flex items-center gap-3">
-              {IS_LOGGED_IN ? (
-                /* ── Logged-in: Profile Avatar + Dropdown ── */
+              {authLoading ? (
+                // Loading skeleton
+                <div className="w-24 h-9 bg-gray-100 rounded-xl animate-pulse" />
+              ) : IS_LOGGED_IN ? (
+                /* ── LOGGED IN: Profile Avatar + Dropdown ── */
                 <div className="relative" ref={profileRef}>
                   <button
                     onClick={() => setProfileOpen((v) => !v)}
                     className="flex items-center gap-2.5 px-3 py-1.5 rounded-xl border-2 border-orange-100 hover:border-orange-300 hover:bg-orange-50 transition-all duration-200 group"
                   >
                     <div className="w-8 h-8 rounded-full bg-gradient-to-br from-orange-500 to-rose-600 flex items-center justify-center text-white text-xs font-bold shadow-sm">
-                      {MOCK_USER.initials}
+                      {user!.initials}
                     </div>
                     <div className="text-left hidden sm:block">
-                      <p className="text-xs font-bold text-[#1a0500] leading-none">
-                        {MOCK_USER.name.split(" ")[0]}
-                      </p>
-                      <p className="text-[10px] text-gray-400 leading-none mt-0.5">
-                        My Account
-                      </p>
+                      <p className="text-xs font-bold text-[#1a0500] leading-none">{user!.name.split(" ")[0]}</p>
+                      <p className="text-[10px] text-gray-400 leading-none mt-0.5">My Account</p>
                     </div>
-                    <svg
-                      className={`w-3.5 h-3.5 text-gray-400 transition-transform ${profileOpen ? "rotate-180" : ""}`}
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M19 9l-7 7-7-7"
-                      />
+                    <svg className={`w-3.5 h-3.5 text-gray-400 transition-transform ${profileOpen ? "rotate-180" : ""}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                     </svg>
                   </button>
 
-                  {/* PROFILE DROPDOWN */}
+                  {/* LOGGED-IN DROPDOWN */}
                   {profileOpen && (
                     <div className="profile-dropdown absolute right-0 top-[calc(100%+10px)] w-72 bg-white rounded-2xl shadow-[0_8px_40px_rgba(0,0,0,0.15)] border border-gray-100 overflow-hidden z-50">
-                      {/* User info header */}
+                      {/* User header */}
                       <div className="bg-gradient-to-br from-orange-50 to-amber-50 px-5 py-4 border-b border-orange-100">
                         <div className="flex items-center gap-3">
                           <div className="w-12 h-12 rounded-full bg-gradient-to-br from-orange-500 to-rose-600 flex items-center justify-center text-white font-bold text-base shadow-md">
-                            {MOCK_USER.initials}
+                            {user!.initials}
                           </div>
                           <div>
-                            <p className="font-bold text-[#1a0500] text-sm">
-                              {MOCK_USER.name}
-                            </p>
-                            <p className="text-xs text-gray-500">
-                              {MOCK_USER.email}
-                            </p>
+                            <p className="font-bold text-[#1a0500] text-sm">{user!.name}</p>
+                            <p className="text-xs text-gray-500">{user!.email}</p>
                           </div>
                         </div>
                       </div>
 
-                      {/* Scrollable content area - ONLY CHANGE HERE */}
                       <div className="max-h-[70vh] overflow-y-auto">
-                        {/* Login/Create CTA if guest */}
-                        <div className="px-4 pt-3 pb-1">
-                          <Link
-                            href="/login"
-                            onClick={() => setProfileOpen(false)}
-                            className="flex items-center justify-center gap-2 w-full bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold py-2.5 rounded-xl transition-colors mb-3"
-                          >
-                            Login / Create an account
-                          </Link>
-                        </div>
-
                         {/* Account section */}
-                        <div className="px-4 pb-2">
-                          <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1 px-1">
-                            Account Details
-                          </p>
+                        <div className="px-4 py-3">
+                          <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1 px-1">Account</p>
                           {[
-                            {
-                              icon: "👤",
-                              label: "My Profile",
-                              href: "/dashboard/profile",
-                            },
-                            {
-                              icon: "📋",
-                              label: "My Puja Participations",
-                              href: "/dashboard",
-                            },
-                            {
-                              icon: "📋",
-                              label: "My Chadhava Participations",
-                              href: "/dashboard",
-                            },
-                            {
-                              icon: "🪔",
-                              label: "Participate in a Puja",
-                              href: "/poojas",
-                              badge: "New",
-                            },
-                            {
-                              icon: "🙏",
-                              label: "Participate in Chadhava",
-                              href: "/chadhava",
-                              badge: "New",
-                            },
+                            { icon: "👤", label: "My Profile", href: "/dashboard/profile" },
+                            { icon: "📋", label: "My Bookings", href: "/dashboard" },
+                            { icon: "🪔", label: "Book a Puja", href: "/poojas", badge: "New" },
+                            { icon: "🙏", label: "Chadhava Offerings", href: "/chadhava", badge: "New" },
                           ].map((item) => (
                             <Link
                               key={item.label}
@@ -296,194 +258,43 @@ export default function Navbar() {
                               onClick={() => setProfileOpen(false)}
                               className="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-orange-50 transition-colors group"
                             >
-                              <span className="text-base w-5 text-center">
-                                {item.icon}
-                              </span>
-                              <span className="text-sm text-gray-700 group-hover:text-orange-600 flex-1 font-medium">
-                                {item.label}
-                              </span>
+                              <span className="text-base w-5 text-center">{item.icon}</span>
+                              <span className="text-sm text-gray-700 group-hover:text-orange-600 flex-1 font-medium">{item.label}</span>
                               {item.badge && (
-                                <span className="bg-green-500 text-white text-[9px] font-bold px-1.5 py-0.5 rounded-full">
-                                  {item.badge}
-                                </span>
+                                <span className="bg-green-500 text-white text-[9px] font-bold px-1.5 py-0.5 rounded-full">{item.badge}</span>
                               )}
-                              <svg
-                                className="w-3.5 h-3.5 text-gray-300 group-hover:text-orange-400"
-                                fill="none"
-                                stroke="currentColor"
-                                viewBox="0 0 24 24"
-                              >
-                                <path
-                                  strokeLinecap="round"
-                                  strokeLinejoin="round"
-                                  strokeWidth={2}
-                                  d="M9 5l7 7-7 7"
-                                />
+                              <svg className="w-3.5 h-3.5 text-gray-300 group-hover:text-orange-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                               </svg>
                             </Link>
                           ))}
                         </div>
 
-                        {/* Explore section */}
-                        <div className="px-4 pb-2">
-                          <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1 px-1 mt-1">
-                            Explore Sri Mandir Services
-                          </p>
-                          {[
-                            { icon: "🏠", label: "Home", href: "/" },
-                            {
-                              icon: "🪔",
-                              label: "Puja Seva",
-                              href: "/poojas",
-                              badge: "New",
-                            },
-                            {
-                              icon: "🙏",
-                              label: "Chadhava Seva",
-                              href: "/chadhava",
-                              badge: "New",
-                            },
-                          ].map((item) => (
-                            <Link
-                              key={item.label}
-                              href={item.href}
-                              onClick={() => setProfileOpen(false)}
-                              className="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-orange-50 transition-colors group"
-                            >
-                              <span className="text-base w-5 text-center">
-                                {item.icon}
-                              </span>
-                              <span className="text-sm text-gray-700 group-hover:text-orange-600 flex-1 font-medium">
-                                {item.label}
-                              </span>
-                              {item.badge && (
-                                <span className="bg-green-500 text-white text-[9px] font-bold px-1.5 py-0.5 rounded-full">
-                                  {item.badge}
-                                </span>
-                              )}
-                              <svg
-                                className="w-3.5 h-3.5 text-gray-300 group-hover:text-orange-400"
-                                fill="none"
-                                stroke="currentColor"
-                                viewBox="0 0 24 24"
-                              >
-                                <path
-                                  strokeLinecap="round"
-                                  strokeLinejoin="round"
-                                  strokeWidth={2}
-                                  d="M9 5l7 7-7 7"
-                                />
-                              </svg>
-                            </Link>
-                          ))}
-                        </div>
-
-                        {/* Help & Support */}
-                        <div className="px-4 pb-4 border-t border-gray-100 pt-3 mt-1">
-                          <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-2 px-1">
-                            Help & Support for Puja Participation
-                          </p>
-                          <div className="bg-gray-50 rounded-xl p-3 space-y-2">
-                            <div className="flex items-center gap-2.5">
-                              <div className="w-7 h-7 bg-red-100 rounded-lg flex items-center justify-center shrink-0">
-                                <svg
-                                  className="w-4 h-4"
-                                  viewBox="0 0 24 24"
-                                  fill="#EA4335"
-                                >
-                                  <path d="M20 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z" />
-                                </svg>
-                              </div>
-                              <div className="flex-1 min-w-0">
-                                <p className="text-xs font-semibold text-gray-800">
-                                  help@mandirlok.com
-                                </p>
-                                <p className="text-[10px] text-gray-400">
-                                  Mail us anytime
-                                </p>
-                              </div>
-                              <button className="text-gray-400 hover:text-gray-600">
-                                <svg
-                                  className="w-3.5 h-3.5"
-                                  fill="none"
-                                  stroke="currentColor"
-                                  viewBox="0 0 24 24"
-                                >
-                                  <path
-                                    strokeLinecap="round"
-                                    strokeLinejoin="round"
-                                    strokeWidth={2}
-                                    d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"
-                                  />
-                                </svg>
-                              </button>
-                            </div>
-                            <div className="flex items-center gap-2.5">
-                              <div className="w-7 h-7 bg-green-100 rounded-lg flex items-center justify-center shrink-0">
-                                <svg
-                                  className="w-4 h-4"
-                                  fill="#25D366"
-                                  viewBox="0 0 24 24"
-                                >
-                                  <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z" />
-                                </svg>
-                              </div>
-                              <div>
-                                <p className="text-xs font-semibold text-gray-800">
-                                  +91 82969 47757
-                                </p>
-                                <p className="text-[10px] text-gray-400">
-                                  Message on WhatsApp
-                                </p>
-                              </div>
-                            </div>
-                          </div>
-                          {IS_LOGGED_IN && (
-                            <Link
-                              href="/login"
-                              onClick={() => setProfileOpen(false)}
-                              className="flex items-center gap-2 w-full mt-3 px-3 py-2 rounded-xl text-red-500 hover:bg-red-50 transition-colors text-sm font-medium"
-                            >
-                              <svg
-                                className="w-4 h-4"
-                                fill="none"
-                                stroke="currentColor"
-                                viewBox="0 0 24 24"
-                              >
-                                <path
-                                  strokeLinecap="round"
-                                  strokeLinejoin="round"
-                                  strokeWidth={2}
-                                  d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"
-                                />
-                              </svg>
-                              Logout
-                            </Link>
-                          )}
+                        {/* Logout */}
+                        <div className="px-4 pb-4 border-t border-gray-100 pt-3">
+                          <button
+                            onClick={handleLogout}
+                            className="flex items-center gap-2 w-full px-3 py-2 rounded-xl text-red-500 hover:bg-red-50 transition-colors text-sm font-medium"
+                          >
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                            </svg>
+                            Logout
+                          </button>
                         </div>
                       </div>
                     </div>
                   )}
                 </div>
               ) : (
+                /* ── NOT LOGGED IN ── */
                 <>
-                  {/* Not logged in — show Login + Participate in Puja */}
                   <Link
                     href="/login"
-                    className="btn-login relative flex items-center gap-2 px-5 py-2.5 rounded-xl border-2 border-orange-400 text-orange-600 text-sm font-bold transition-all duration-200 hover:bg-orange-50 hover:border-orange-500 hover:text-orange-700 hover:-translate-y-0.5 active:scale-95"
+                    className="btn-login relative flex items-center gap-2 px-5 py-2.5 rounded-xl border-2 border-orange-400 text-orange-600 text-sm font-bold transition-all duration-200 hover:bg-orange-50 hover:border-orange-500 hover:-translate-y-0.5 active:scale-95"
                   >
-                    <svg
-                      className="w-4 h-4"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
-                      />
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                     </svg>
                     Login
                   </Link>
@@ -496,48 +307,25 @@ export default function Navbar() {
                       <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-yellow-100"></span>
                     </span>
                     Participate in Puja
-                    <svg
-                      className="w-4 h-4"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2.5}
-                        d="M17 8l4 4m0 0l-4 4m4-4H3"
-                      />
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M17 8l4 4m0 0l-4 4m4-4H3" />
                     </svg>
                   </Link>
 
-                  {/* Profile icon (guest) */}
+                  {/* Guest profile icon */}
                   <div className="relative" ref={profileRef}>
                     <button
                       onClick={() => setProfileOpen((v) => !v)}
                       className="w-9 h-9 rounded-full bg-gray-100 hover:bg-orange-100 border-2 border-transparent hover:border-orange-300 flex items-center justify-center transition-all duration-200"
                     >
-                      <svg
-                        className="w-5 h-5 text-gray-500"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
-                        />
+                      <svg className="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                       </svg>
                     </button>
 
-                    {/* GUEST PROFILE PANEL */}
                     {profileOpen && (
                       <div className="profile-dropdown absolute right-0 top-[calc(100%+10px)] w-72 bg-white rounded-2xl shadow-[0_8px_40px_rgba(0,0,0,0.15)] border border-gray-100 overflow-hidden z-50">
-                        {/* Scrollable content area - ONLY CHANGE HERE */}
                         <div className="max-h-[70vh] overflow-y-auto">
-                          {/* Login CTA */}
                           <div className="p-4 border-b border-gray-100">
                             <Link
                               href="/login"
@@ -547,40 +335,11 @@ export default function Navbar() {
                               Login / Create an account
                             </Link>
                           </div>
-
-                          {/* Account Details */}
-                          <div className="px-4 py-2">
-                            <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1 px-1">
-                              Account Details
-                            </p>
+                          <div className="px-4 py-3">
                             {[
-                              {
-                                icon: "👤",
-                                label: "My Profile",
-                                href: "/login",
-                              },
-                              {
-                                icon: "📋",
-                                label: "My Puja Participations",
-                                href: "/login",
-                              },
-                              {
-                                icon: "📋",
-                                label: "My Chadhava Participations",
-                                href: "/login",
-                              },
-                              {
-                                icon: "🪔",
-                                label: "Participate in a Puja",
-                                href: "/poojas",
-                                badge: "New",
-                              },
-                              {
-                                icon: "🙏",
-                                label: "Participate in Chadhava",
-                                href: "/chadhava",
-                                badge: "New",
-                              },
+                              { icon: "📋", label: "My Bookings", href: "/login" },
+                              { icon: "🪔", label: "Book a Puja", href: "/poojas", badge: "New" },
+                              { icon: "🙏", label: "Chadhava Offerings", href: "/chadhava", badge: "New" },
                             ].map((item) => (
                               <Link
                                 key={item.label}
@@ -588,148 +347,13 @@ export default function Navbar() {
                                 onClick={() => setProfileOpen(false)}
                                 className="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-orange-50 transition-colors group"
                               >
-                                <span className="text-base w-5 text-center">
-                                  {item.icon}
-                                </span>
-                                <span className="text-sm text-gray-700 group-hover:text-orange-600 flex-1 font-medium">
-                                  {item.label}
-                                </span>
+                                <span className="text-base w-5 text-center">{item.icon}</span>
+                                <span className="text-sm text-gray-700 group-hover:text-orange-600 flex-1 font-medium">{item.label}</span>
                                 {item.badge && (
-                                  <span className="bg-green-500 text-white text-[9px] font-bold px-1.5 py-0.5 rounded-full">
-                                    {item.badge}
-                                  </span>
+                                  <span className="bg-green-500 text-white text-[9px] font-bold px-1.5 py-0.5 rounded-full">{item.badge}</span>
                                 )}
-                                <svg
-                                  className="w-3.5 h-3.5 text-gray-300 group-hover:text-orange-400"
-                                  fill="none"
-                                  stroke="currentColor"
-                                  viewBox="0 0 24 24"
-                                >
-                                  <path
-                                    strokeLinecap="round"
-                                    strokeLinejoin="round"
-                                    strokeWidth={2}
-                                    d="M9 5l7 7-7 7"
-                                  />
-                                </svg>
                               </Link>
                             ))}
-                          </div>
-
-                          {/* Explore */}
-                          <div className="px-4 pb-2">
-                            <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1 px-1 mt-1">
-                              Explore Sri Mandir Services
-                            </p>
-                            {[
-                              { icon: "🏠", label: "Home", href: "/" },
-                              {
-                                icon: "🪔",
-                                label: "Puja Seva",
-                                href: "/poojas",
-                                badge: "New",
-                              },
-                              {
-                                icon: "🙏",
-                                label: "Chadhava Seva",
-                                href: "/chadhava",
-                                badge: "New",
-                              },
-                            ].map((item) => (
-                              <Link
-                                key={item.label}
-                                href={item.href}
-                                onClick={() => setProfileOpen(false)}
-                                className="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-orange-50 transition-colors group"
-                              >
-                                <span className="text-base w-5 text-center">
-                                  {item.icon}
-                                </span>
-                                <span className="text-sm text-gray-700 group-hover:text-orange-600 flex-1 font-medium">
-                                  {item.label}
-                                </span>
-                                {item.badge && (
-                                  <span className="bg-green-500 text-white text-[9px] font-bold px-1.5 py-0.5 rounded-full">
-                                    {item.badge}
-                                  </span>
-                                )}
-                                <svg
-                                  className="w-3.5 h-3.5 text-gray-300 group-hover:text-orange-400"
-                                  fill="none"
-                                  stroke="currentColor"
-                                  viewBox="0 0 24 24"
-                                >
-                                  <path
-                                    strokeLinecap="round"
-                                    strokeLinejoin="round"
-                                    strokeWidth={2}
-                                    d="M9 5l7 7-7 7"
-                                  />
-                                </svg>
-                              </Link>
-                            ))}
-                          </div>
-
-                          {/* Help */}
-                          <div className="px-4 pb-4 border-t border-gray-100 pt-3 mt-1">
-                            <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-2 px-1">
-                              Help & Support for Puja Participation
-                            </p>
-                            <div className="bg-gray-50 rounded-xl p-3 space-y-2">
-                              <div className="flex items-center gap-2.5">
-                                <div className="w-7 h-7 bg-red-100 rounded-lg flex items-center justify-center shrink-0">
-                                  <svg
-                                    className="w-4 h-4"
-                                    viewBox="0 0 24 24"
-                                    fill="#EA4335"
-                                  >
-                                    <path d="M20 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z" />
-                                  </svg>
-                                </div>
-                                <div className="flex-1 min-w-0">
-                                  <p className="text-xs font-semibold text-gray-800">
-                                    help@mandirlok.com
-                                  </p>
-                                  <p className="text-[10px] text-gray-400">
-                                    Mail us anytime on the Mail id given above.
-                                  </p>
-                                </div>
-                                <button className="text-gray-400 hover:text-gray-600 shrink-0">
-                                  <svg
-                                    className="w-3.5 h-3.5"
-                                    fill="none"
-                                    stroke="currentColor"
-                                    viewBox="0 0 24 24"
-                                  >
-                                    <path
-                                      strokeLinecap="round"
-                                      strokeLinejoin="round"
-                                      strokeWidth={2}
-                                      d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"
-                                    />
-                                  </svg>
-                                </button>
-                              </div>
-                              <div className="flex items-center gap-2.5">
-                                <div className="w-7 h-7 bg-green-100 rounded-lg flex items-center justify-center shrink-0">
-                                  <svg
-                                    className="w-4 h-4"
-                                    fill="#25D366"
-                                    viewBox="0 0 24 24"
-                                  >
-                                    <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z" />
-                                  </svg>
-                                </div>
-                                <div>
-                                  <p className="text-xs font-semibold text-gray-800">
-                                    +91 82969 47757
-                                  </p>
-                                  <p className="text-[10px] text-gray-400">
-                                    Message us anytime on the given number.
-                                  </p>
-                                </div>
-                              </div>
-                            </div>
                           </div>
                         </div>
                       </div>
@@ -739,7 +363,7 @@ export default function Navbar() {
               )}
             </div>
 
-            {/* MOBILE MENU BUTTON */}
+            {/* MOBILE HAMBURGER */}
             <button
               onClick={() => setMenuOpen((v) => !v)}
               className={`md:hidden flex flex-col justify-center items-center gap-[5px] w-10 h-10 rounded-xl hover:bg-orange-50 transition-colors ${menuOpen ? "menu-open" : ""}`}
@@ -767,35 +391,41 @@ export default function Navbar() {
                   {link.label}
                 </Link>
               ))}
-              <div className="flex gap-3 mt-3 pt-3 border-t border-orange-100">
-                <Link
-                  href="/login"
-                  onClick={() => setMenuOpen(false)}
-                  className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl border-2 border-orange-400 text-orange-600 text-sm font-bold hover:bg-orange-50 transition-colors"
-                >
-                  <svg
-                    className="w-4 h-4"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
+
+              {IS_LOGGED_IN ? (
+                <>
+                  <Link
+                    href="/dashboard"
+                    onClick={() => setMenuOpen(false)}
+                    className="flex items-center gap-3 px-4 py-3 text-sm font-semibold text-orange-600 hover:bg-orange-50 rounded-xl transition-colors"
                   >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
-                    />
-                  </svg>
-                  Login
-                </Link>
-                <Link
-                  href="/poojas"
-                  onClick={() => setMenuOpen(false)}
-                  className="flex-1 btn-book flex items-center justify-center gap-2 py-2.5 rounded-xl text-white text-sm font-bold shadow-md"
-                >
-                  Participate in Puja 🙏
-                </Link>
-              </div>
+                    📋 My Bookings
+                  </Link>
+                  <button
+                    onClick={handleLogout}
+                    className="flex items-center gap-3 px-4 py-3 text-sm font-semibold text-red-500 hover:bg-red-50 rounded-xl transition-colors"
+                  >
+                    🚪 Logout
+                  </button>
+                </>
+              ) : (
+                <div className="flex gap-3 mt-3 pt-3 border-t border-orange-100">
+                  <Link
+                    href="/login"
+                    onClick={() => setMenuOpen(false)}
+                    className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl border-2 border-orange-400 text-orange-600 text-sm font-bold hover:bg-orange-50 transition-colors"
+                  >
+                    Login
+                  </Link>
+                  <Link
+                    href="/poojas"
+                    onClick={() => setMenuOpen(false)}
+                    className="flex-1 btn-book flex items-center justify-center gap-2 py-2.5 rounded-xl text-white text-sm font-bold shadow-md"
+                  >
+                    Book Puja 🙏
+                  </Link>
+                </div>
+              )}
             </div>
           </div>
         )}
