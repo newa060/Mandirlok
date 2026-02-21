@@ -43,11 +43,11 @@ interface UserProfile {
 
 // ── Status Config ─────────────────────────────────────────────────────────────
 const statusConfig = {
-  pending:     { label: "Pending",     bg: "bg-yellow-50", border: "border-yellow-200", text: "text-yellow-700" },
-  confirmed:   { label: "Confirmed",   bg: "bg-[#fff8f0]", border: "border-[#ffd9a8]", text: "text-[#ff7f0a]"  },
-  "in-progress":{ label: "In Progress",bg: "bg-blue-50",   border: "border-blue-200",  text: "text-blue-700"   },
-  completed:   { label: "Completed",   bg: "bg-green-50",  border: "border-green-200", text: "text-green-700"  },
-  cancelled:   { label: "Cancelled",   bg: "bg-red-50",    border: "border-red-200",   text: "text-red-600"    },
+  pending: { label: "Pending", bg: "bg-yellow-50", border: "border-yellow-200", text: "text-yellow-700" },
+  confirmed: { label: "Confirmed", bg: "bg-[#fff8f0]", border: "border-[#ffd9a8]", text: "text-[#ff7f0a]" },
+  "in-progress": { label: "In Progress", bg: "bg-blue-50", border: "border-blue-200", text: "text-blue-700" },
+  completed: { label: "Completed", bg: "bg-green-50", border: "border-green-200", text: "text-green-700" },
+  cancelled: { label: "Cancelled", bg: "bg-red-50", border: "border-red-200", text: "text-red-600" },
 };
 
 // ── Skeleton ──────────────────────────────────────────────────────────────────
@@ -72,10 +72,10 @@ function SkeletonBooking() {
 
 // ── Main Export ───────────────────────────────────────────────────────────────
 export default function DashboardPage() {
-  const [orders,    setOrders]    = useState<Order[]>([]);
-  const [profile,   setProfile]   = useState<UserProfile | null>(null);
-  const [loading,   setLoading]   = useState(true);
-  const [error,     setError]     = useState("");
+  const [orders, setOrders] = useState<Order[]>([]);
+  const [profile, setProfile] = useState<UserProfile | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
   const [activeTab, setActiveTab] = useState<"all" | "upcoming" | "completed">("all");
 
   // Fetch orders and profile
@@ -89,10 +89,10 @@ export default function DashboardPage() {
           fetch("/api/auth/me"),
         ]);
 
-        const ordersData  = await ordersRes.json();
+        const ordersData = await ordersRes.json();
         const profileData = await profileRes.json();
 
-        if (ordersData.success)  setOrders(ordersData.data);
+        if (ordersData.success) setOrders(ordersData.data);
         if (profileData.success) setProfile(profileData.data);
 
         if (!ordersData.success) setError("Failed to load bookings.");
@@ -108,15 +108,15 @@ export default function DashboardPage() {
 
   // Filter orders by tab
   const filtered = orders.filter((o) => {
-    if (activeTab === "upcoming")  return o.orderStatus === "pending" || o.orderStatus === "confirmed" || o.orderStatus === "in-progress";
+    if (activeTab === "upcoming") return o.orderStatus === "pending" || o.orderStatus === "confirmed" || o.orderStatus === "in-progress";
     if (activeTab === "completed") return o.orderStatus === "completed";
     return true;
   });
 
   // Stats
-  const totalBookings    = orders.length;
-  const completedCount   = orders.filter((o) => o.orderStatus === "completed").length;
-  const videosReceived   = orders.filter((o) => o.videoUrl).length;
+  const totalBookings = orders.length;
+  const completedCount = orders.filter((o) => o.orderStatus === "completed").length;
+  const videosReceived = orders.filter((o) => o.videoUrl).length;
 
   // Format date
   const formatDate = (dateStr: string) => {
@@ -153,24 +153,36 @@ export default function DashboardPage() {
                 {/* Nav */}
                 <nav className="space-y-1">
                   {[
-                    { label: "My Bookings",   href: "/dashboard",               active: true  },
-                    { label: "Profile",        href: "/dashboard/profile"                      },
-                    { label: "Saved Temples",  href: "/dashboard/saved"                        },
-                    { label: "Notifications",  href: "/dashboard/notifications"                },
-                    { label: "Logout",         href: "/login"                                  },
+                    { label: "My Bookings", href: "/dashboard", active: true },
+                    { label: "Profile", href: "/dashboard/profile" },
+                    { label: "Saved Temples", href: "/dashboard/saved" },
+                    { label: "Notifications", href: "/dashboard/notifications" },
                   ].map((item) => (
                     <Link
                       key={item.label}
                       href={item.href}
-                      className={`flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm transition-colors ${
-                        item.active
+                      className={`flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm transition-colors ${item.active
                           ? "bg-[#fff8f0] text-[#ff7f0a] font-semibold border border-[#ffd9a8]"
                           : "text-[#6b5b45] hover:bg-[#fdf6ee] hover:text-[#ff7f0a]"
-                      }`}
+                        }`}
                     >
                       {item.label}
                     </Link>
                   ))}
+
+                  <button
+                    onClick={async () => {
+                      try {
+                        await fetch("/api/auth/logout", { method: "POST" });
+                        window.location.href = "/";
+                      } catch {
+                        window.location.href = "/";
+                      }
+                    }}
+                    className="flex w-full text-left items-center gap-2 px-3 py-2.5 rounded-xl text-sm text-[#6b5b45] hover:bg-red-50 hover:text-red-500 transition-colors"
+                  >
+                    Logout
+                  </button>
                 </nav>
               </div>
             </div>
@@ -181,9 +193,9 @@ export default function DashboardPage() {
               {/* Stats Row */}
               <div className="grid grid-cols-3 gap-4">
                 {[
-                  { label: "Total Bookings",  value: totalBookings,  emoji: "🙏" },
-                  { label: "Completed",        value: completedCount, emoji: "✅" },
-                  { label: "Videos Received",  value: videosReceived, emoji: "📹" },
+                  { label: "Total Bookings", value: totalBookings, emoji: "🙏" },
+                  { label: "Completed", value: completedCount, emoji: "✅" },
+                  { label: "Videos Received", value: videosReceived, emoji: "📹" },
                 ].map((s) => (
                   <div key={s.label} className="bg-white border border-[#f0dcc8] rounded-2xl p-4 text-center shadow-card">
                     <div className="text-2xl mb-1">{s.emoji}</div>
@@ -201,11 +213,10 @@ export default function DashboardPage() {
                   <button
                     key={tab}
                     onClick={() => setActiveTab(tab)}
-                    className={`px-4 py-2 rounded-full text-sm font-medium capitalize transition-all ${
-                      activeTab === tab
-                        ? "bg-[#ff7f0a] text-white shadow-sm"
-                        : "bg-white border border-[#f0dcc8] text-[#6b5b45] hover:border-[#ffbd6e]"
-                    }`}
+                    className={`px-4 py-2 rounded-full text-sm font-medium capitalize transition-all ${activeTab === tab
+                      ? "bg-[#ff7f0a] text-white shadow-sm"
+                      : "bg-white border border-[#f0dcc8] text-[#6b5b45] hover:border-[#ffbd6e]"
+                      }`}
                   >
                     {tab === "all" ? "All Bookings" : tab === "upcoming" ? "Upcoming" : "Completed"}
                   </button>
@@ -244,7 +255,7 @@ export default function DashboardPage() {
               {!loading && !error && filtered.length > 0 && (
                 <div className="space-y-4">
                   {filtered.map((order) => {
-                    const sc = statusConfig[order.orderStatus];
+                    const sc = statusConfig[order.orderStatus] || statusConfig.pending;
                     return (
                       <div key={order._id} className="bg-white border border-[#f0dcc8] rounded-2xl p-5 shadow-card">
                         <div className="flex items-start gap-4">
@@ -310,7 +321,24 @@ export default function DashboardPage() {
                               </button>
                             )}
                             {(order.orderStatus === "pending" || order.orderStatus === "confirmed") && (
-                              <button className="text-xs text-red-500 border border-red-200 px-3 py-1.5 rounded-full hover:bg-red-50">
+                              <button
+                                onClick={async () => {
+                                  if (!confirm("Are you sure you want to cancel this pooja booking?")) return;
+                                  try {
+                                    const res = await fetch(`/api/orders/${order._id}/cancel`, { method: "POST" });
+                                    const data = await res.json();
+                                    if (data.success) {
+                                      setOrders(prev => prev.map(o => o._id === order._id ? { ...o, orderStatus: 'cancelled' } : o));
+                                      alert("Booking Cancelled.");
+                                    } else {
+                                      alert(data.message || "Could not cancel booking");
+                                    }
+                                  } catch (err) {
+                                    alert("Server error connecting to cancellation service.");
+                                  }
+                                }}
+                                className="text-xs text-red-500 border border-red-200 px-3 py-1.5 rounded-full hover:bg-red-50 transition"
+                              >
                                 Cancel
                               </button>
                             )}

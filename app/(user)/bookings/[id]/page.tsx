@@ -1,0 +1,270 @@
+'use client'
+
+import { useEffect, useState, use } from 'react'
+import { useRouter } from 'next/navigation'
+import Link from 'next/link'
+import Navbar from '@/components/layout/Navbar'
+import Footer from '@/components/layout/Footer'
+import { ChevronRight, ArrowLeft, Loader2, Calendar, Clock, MapPin, Phone, MessageCircle, FileText, Download, Share2, Video } from 'lucide-react'
+
+// ── Types ─────────────────────────────────────────────────────────────────────
+interface OrderData {
+    _id: string
+    bookingId: string
+    poojaId: { _id: string; name: string; emoji: string; duration: string }
+    templeId: { _id: string; name: string; location: string }
+    panditId?: { _id: string; name: string; phone: string }
+    bookingDate: string
+    sankalpName: string
+    gotra: string
+    dob?: string
+    phone: string
+    whatsapp: string
+    sankalp?: string
+    address?: string
+    qty: number
+    chadhavaItems: { name: string; price: number; emoji: string }[]
+    poojaAmount: number
+    chadhavaAmount: number
+    totalAmount: number
+    orderStatus: 'pending' | 'confirmed' | 'in-progress' | 'completed' | 'cancelled'
+    paymentStatus: 'pending' | 'paid' | 'failed' | 'refunded'
+    videoUrl?: string
+    createdAt: string
+}
+
+// ── Status Config ─────────────────────────────────────────────────────────────
+const statusConfig = {
+    pending: { label: 'Pending', bg: 'bg-yellow-50', border: 'border-yellow-200', text: 'text-yellow-700' },
+    confirmed: { label: 'Confirmed', bg: 'bg-[#fff8f0]', border: 'border-[#ffd9a8]', text: 'text-[#ff7f0a]' },
+    'in-progress': { label: 'In Progress', bg: 'bg-blue-50', border: 'border-blue-200', text: 'text-blue-700' },
+    completed: { label: 'Completed', bg: 'bg-green-50', border: 'border-green-200', text: 'text-green-700' },
+    cancelled: { label: 'Cancelled', bg: 'bg-red-50', border: 'border-red-200', text: 'text-red-600' },
+}
+
+// ── Helpers ───────────────────────────────────────────────────────────────────
+function formatDate(dateStr: string) {
+    return new Date(dateStr).toLocaleDateString('en-IN', {
+        day: 'numeric', month: 'long', year: 'numeric',
+    })
+}
+
+export default function BookingDetailsPage({ params }: { params: { id: string } }) {
+    const router = useRouter()
+    // In Next.js 14 and below, params is directly accessed as an object.
+    const orderId = params.id
+
+    const [order, setOrder] = useState<OrderData | null>(null)
+    const [loading, setLoading] = useState(true)
+    const [error, setError] = useState('')
+
+    useEffect(() => {
+        if (!orderId) {
+            setError('Invalid Booking ID.')
+            setLoading(false)
+            return
+        }
+
+        fetch(`/api/orders/${orderId}`)
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    setOrder(data.data)
+                } else {
+                    setError(data.message || 'Could not load booking details.')
+                }
+            })
+            .catch(() => setError('Failed to load booking details. Please try again.'))
+            .finally(() => setLoading(false))
+    }, [orderId])
+
+    return (
+        <>
+            <Navbar />
+            <main className="pt-20 min-h-screen bg-[#fdf6ee]">
+
+                {/* Breadcrumb */}
+                <div className="bg-white border-b border-[#f0dcc8]">
+                    <div className="container-app py-3 flex items-center gap-2 text-xs text-[#6b5b45]">
+                        <Link href="/" className="hover:text-[#ff7f0a]">Home</Link>
+                        <ChevronRight size={12} />
+                        <Link href="/dashboard" className="hover:text-[#ff7f0a]">Dashboard</Link>
+                        <ChevronRight size={12} />
+                        <span className="text-[#1a1209] font-medium">Booking Details</span>
+                    </div>
+                </div>
+
+                <div className="container-app py-8 max-w-3xl mx-auto">
+
+                    {/* Back Button */}
+                    <button
+                        onClick={() => router.back()}
+                        className="flex items-center gap-1.5 text-sm text-[#6b5b45] hover:text-[#ff7f0a] mb-6 transition-colors"
+                    >
+                        <ArrowLeft size={16} /> Back
+                    </button>
+
+                    {loading ? (
+                        <div className="flex flex-col items-center justify-center py-20">
+                            <Loader2 size={40} className="animate-spin text-[#ff7f0a] mb-4" />
+                            <p className="text-[#6b5b45]">Loading your booking details...</p>
+                        </div>
+                    ) : error || !order ? (
+                        <div className="bg-white border border-[#f0dcc8] rounded-2xl p-8 text-center shadow-card">
+                            <p className="text-red-600 mb-4">{error || 'Booking not found.'}</p>
+                            <Link href="/dashboard" className="btn-saffron text-sm px-6">
+                                Go to Dashboard
+                            </Link>
+                        </div>
+                    ) : (
+                        <div className="space-y-6">
+
+                            {/* Header Card */}
+                            <div className="bg-white border border-[#f0dcc8] rounded-2xl p-6 shadow-card">
+                                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b border-[#f0dcc8] pb-5 mb-5">
+                                    <div>
+                                        <h1 className="heading-md text-[#1a1209] mb-1">
+                                            Booking: <span className="text-[#ff7f0a]">{order.bookingId}</span>
+                                        </h1>
+                                        <p className="text-xs text-[#6b5b45]">
+                                            Booked on {formatDate(order.createdAt)}
+                                        </p>
+                                    </div>
+                                    <div className="flex flex-col items-end gap-2">
+                                        <span className={`text-xs font-semibold px-3 py-1.5 rounded-full border ${statusConfig[order.orderStatus].bg} ${statusConfig[order.orderStatus].border} ${statusConfig[order.orderStatus].text}`}>
+                                            {statusConfig[order.orderStatus].label}
+                                        </span>
+                                        {order.paymentStatus === 'paid' ?
+                                            <span className="text-[10px] font-medium text-green-600 bg-green-50 px-2 py-0.5 rounded border border-green-200">Payment: Success</span> :
+                                            <span className="text-[10px] font-medium text-yellow-600 bg-yellow-50 px-2 py-0.5 rounded border border-yellow-200">Payment: Pending</span>
+                                        }
+                                    </div>
+                                </div>
+
+                                <div className="flex items-start gap-4">
+                                    <div className="w-16 h-16 bg-[#fff8f0] rounded-2xl flex items-center justify-center text-3xl flex-shrink-0 shadow-inner">
+                                        {order.poojaId?.emoji || "🪔"}
+                                    </div>
+                                    <div className="flex-1">
+                                        <h2 className="font-display font-bold text-lg text-[#1a1209] mb-1">
+                                            {order.poojaId?.name}
+                                        </h2>
+                                        <p className="text-sm text-[#ff7f0a] mb-3 flex items-center gap-1.5">
+                                            <MapPin size={14} /> {order.templeId?.name}, {order.templeId?.location}
+                                        </p>
+                                        <div className="grid grid-cols-2 gap-y-2 gap-x-4 text-xs text-[#6b5b45]">
+                                            <span className="flex items-center gap-1.5"><Calendar size={14} className="text-[#ff7f0a]" /> {formatDate(order.bookingDate)}</span>
+                                            <span className="flex items-center gap-1.5"><Clock size={14} className="text-[#ff7f0a]" /> {order.poojaId?.duration}</span>
+                                            <span className="flex items-center gap-1.5">👥 {order.qty || 1} Devotee{order.qty > 1 ? 's' : ''}</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Action Bar (Video/Receipt) */}
+                            {(order.videoUrl || order.orderStatus === 'completed') && (
+                                <div className="bg-[#f0fdf4] border border-green-200 rounded-2xl p-4 flex flex-col sm:flex-row items-center justify-between gap-4">
+                                    <div className="flex-1">
+                                        <h3 className="font-semibold text-green-800 text-sm mb-1">Pooja Completed Successfully 🙏</h3>
+                                        <p className="text-xs text-green-700">The pandit has performed the rituals with your sankalp.</p>
+                                    </div>
+                                    <div className="flex gap-3 w-full sm:w-auto">
+                                        {order.videoUrl && (
+                                            <a href={order.videoUrl} target="_blank" rel="noreferrer" className="flex-1 sm:flex-none flex items-center justify-center gap-1.5 text-sm bg-green-600 text-white px-4 py-2 rounded-xl font-medium hover:bg-green-700 transition">
+                                                <Video size={16} /> Watch Video
+                                            </a>
+                                        )}
+                                        <button className="flex-1 sm:flex-none flex items-center justify-center gap-1.5 text-sm bg-white border border-green-300 text-green-700 px-4 py-2 rounded-xl font-medium hover:bg-green-50 transition">
+                                            <Download size={16} /> Receipt
+                                        </button>
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* Grid 2 Columns for details */}
+                            <div className="grid md:grid-cols-2 gap-6">
+
+                                {/* Sankalp Details */}
+                                <div className="bg-white border border-[#f0dcc8] rounded-2xl p-6 shadow-card">
+                                    <h3 className="font-display font-semibold text-[#1a1209] mb-4 flex items-center gap-2">
+                                        <FileText size={18} className="text-[#ff7f0a]" /> Sankalp Details
+                                    </h3>
+                                    <div className="space-y-4">
+                                        <div className="grid grid-cols-2 gap-2 text-sm">
+                                            <span className="text-[#6b5b45]">Name</span>
+                                            <span className="font-medium text-[#1a1209] text-right">{order.sankalpName}</span>
+
+                                            <span className="text-[#6b5b45]">Gotra</span>
+                                            <span className="font-medium text-[#1a1209] text-right">{order.gotra || '—'}</span>
+
+                                            <span className="text-[#6b5b45]">Date of Birth</span>
+                                            <span className="font-medium text-[#1a1209] text-right">{order.dob ? formatDate(order.dob) : '—'}</span>
+                                        </div>
+
+                                        {order.sankalp && (
+                                            <div className="bg-[#fff8f0] p-3 rounded-xl border border-[#ffd9a8] text-sm mt-2">
+                                                <span className="block text-xs text-[#6b5b45] mb-1">Special Wish:</span>
+                                                <span className="text-[#1a1209] italic">"{order.sankalp}"</span>
+                                            </div>
+                                        )}
+
+                                        <div className="pt-4 border-t border-gray-100">
+                                            <h4 className="text-xs font-semibold text-[#1a1209] mb-2">Contact Info</h4>
+                                            <div className="space-y-2 text-sm">
+                                                <div className="flex items-center justify-between">
+                                                    <span className="flex items-center gap-1.5 text-[#6b5b45]"><Phone size={14} /> Mobile</span>
+                                                    <span className="font-medium text-[#1a1209]">+91 {order.phone}</span>
+                                                </div>
+                                                <div className="flex items-center justify-between">
+                                                    <span className="flex items-center gap-1.5 text-[#6b5b45]"><MessageCircle size={14} className="text-[#25D366]" /> WhatsApp</span>
+                                                    <span className="font-medium text-[#1a1209]">+91 {order.whatsapp}</span>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        {order.address && (
+                                            <div className="pt-4 border-t border-gray-100">
+                                                <h4 className="text-xs font-semibold text-[#1a1209] mb-1">Prasad Delivery Address</h4>
+                                                <p className="text-sm text-[#6b5b45]">{order.address}</p>
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+
+                                {/* Price Breakdown */}
+                                <div className="bg-white border border-[#f0dcc8] rounded-2xl p-6 shadow-card h-fit">
+                                    <h3 className="font-display font-semibold text-[#1a1209] mb-4">Payment Summary</h3>
+                                    <div className="space-y-3">
+                                        <div className="flex justify-between text-sm">
+                                            <span className="text-[#6b5b45]">Base Pooja ({order.qty} Person{order.qty > 1 ? 's' : ''})</span>
+                                            <span className="font-medium text-[#1a1209]">₹{order.poojaAmount.toLocaleString()}</span>
+                                        </div>
+
+                                        {order.chadhavaItems?.map((item, idx) => (
+                                            <div key={idx} className="flex justify-between text-sm">
+                                                <span className="text-[#6b5b45] pl-2 border-l-2 border-[#ff7f0a]/30">
+                                                    {item.emoji} {item.name}
+                                                </span>
+                                                <span className="font-medium text-[#1a1209]">₹{item.price.toLocaleString()}</span>
+                                            </div>
+                                        ))}
+
+                                        <div className="pt-4 mt-2 border-t border-[#f0dcc8]">
+                                            <div className="flex justify-between items-center text-lg font-bold text-[#1a1209]">
+                                                <span>Total Paid</span>
+                                                <span className="text-[#ff7f0a]">₹{order.totalAmount.toLocaleString()}</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                            </div>
+
+                        </div>
+                    )}
+                </div>
+            </main>
+            <Footer />
+        </>
+    )
+}

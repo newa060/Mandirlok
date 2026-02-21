@@ -5,7 +5,7 @@ import Pooja from "@/models/Pooja";
 import Chadhava from "@/models/Chadhava";
 
 const razorpay = new Razorpay({
-  key_id:     process.env.RAZORPAY_KEY_ID!,
+  key_id: process.env.RAZORPAY_KEY_ID!,
   key_secret: process.env.RAZORPAY_KEY_SECRET!,
 });
 
@@ -14,7 +14,7 @@ export async function POST(req: Request) {
     await connectDB();
 
     const body = await req.json();
-    const { poojaId, chadhavaIds = [] } = body;
+    const { poojaId, qty = 1, chadhavaIds = [] } = body;
 
     if (!poojaId) {
       return NextResponse.json(
@@ -39,17 +39,19 @@ export async function POST(req: Request) {
       chadhavaAmount = chadhavaItems.reduce((sum, item) => sum + item.price, 0);
     }
 
-    const totalAmount = pooja.price + chadhavaAmount;
+    const poojaAmount = pooja.price * qty;
+    const totalAmount = poojaAmount + chadhavaAmount;
 
     // Razorpay amount is in paise (multiply by 100)
     const razorpayOrder = await razorpay.orders.create({
-      amount:   totalAmount * 100,
+      amount: totalAmount * 100,
       currency: "INR",
-      receipt:  `receipt_${Date.now()}`,
+      receipt: `receipt_${Date.now()}`,
       notes: {
-        poojaId:       poojaId,
-        poojaName:     pooja.name,
-        chadhavaIds:   chadhavaIds.join(","),
+        poojaId: poojaId,
+        poojaName: pooja.name,
+        qty: qty.toString(),
+        chadhavaIds: chadhavaIds.join(","),
       },
     });
 
@@ -57,11 +59,11 @@ export async function POST(req: Request) {
       success: true,
       data: {
         razorpayOrderId: razorpayOrder.id,
-        amount:          totalAmount,
-        currency:        "INR",
-        poojaAmount:     pooja.price,
+        amount: totalAmount,
+        currency: "INR",
+        poojaAmount: poojaAmount,
         chadhavaAmount,
-        keyId:           process.env.RAZORPAY_KEY_ID,
+        keyId: process.env.RAZORPAY_KEY_ID,
       },
     });
   } catch (error) {

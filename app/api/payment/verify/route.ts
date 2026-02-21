@@ -41,6 +41,7 @@ export async function POST(req: Request) {
       poojaId,
       templeId,
       bookingDate,
+      qty = 1,
       chadhavaIds = [],
 
       // Sankalp details
@@ -83,49 +84,56 @@ export async function POST(req: Request) {
       const chadhavaList = await Chadhava.find({ _id: { $in: chadhavaIds } });
       chadhavaItems = chadhavaList.map((c) => ({
         chadhavaId: c._id.toString(),
-        name:       c.name,
-        price:      c.price,
-        emoji:      c.emoji,
+        name: c.name,
+        price: c.price,
+        emoji: c.emoji,
       }));
       chadhavaAmount = chadhavaList.reduce((sum, c) => sum + c.price, 0);
     }
 
-    const totalAmount = pooja.price + chadhavaAmount;
+    const poojaAmount = pooja.price * qty;
+    const totalAmount = poojaAmount + chadhavaAmount;
 
     // 4. Save order to DB
     const order = await Order.create({
-      userId:             decoded.userId,
+      userId: decoded.userId,
       poojaId,
       templeId,
-      bookingDate:        new Date(bookingDate),
+      bookingDate: new Date(bookingDate),
       sankalpName,
-      gotra:              gotra || "",
-      dob:                dob || "",
+      gotra: gotra || "",
+      dob: dob || "",
       phone,
       whatsapp,
-      sankalp:            sankalp || "",
-      address:            address || "",
+      sankalp: sankalp || "",
+      address: address || "",
+      qty: Number(qty),
       chadhavaItems,
-      poojaAmount:        pooja.price,
+      poojaAmount,
       chadhavaAmount,
       totalAmount,
-      paymentStatus:      "paid",
+      paymentStatus: "paid",
       razorpayOrderId,
       razorpayPaymentId,
       razorpaySignature,
-      orderStatus:        "pending",
+      orderStatus: "pending",
     });
 
     return NextResponse.json({
       success: true,
       message: "Payment verified and order created",
       data: {
-        orderId:   order._id,
+        orderId: order._id,
         bookingId: order.bookingId,
       },
     });
-  } catch (error) {
-    console.error("POST /api/payment/verify error:", error);
+  } catch (error: any) {
+    console.error("POST /api/payment/verify error:");
+    if (error.errors) {
+      console.error(Object.keys(error.errors).map(k => `${k}: ${error.errors[k].message}`).join('\n'));
+    } else {
+      console.error(error);
+    }
     return NextResponse.json(
       { success: false, message: "Server error" },
       { status: 500 }

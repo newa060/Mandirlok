@@ -16,6 +16,7 @@ interface OrderData {
   sankalpName: string
   totalAmount: number
   whatsapp: string
+  qty: number
 }
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -113,6 +114,7 @@ function BookingSuccessContent() {
                 { label: 'Pooja', value: `${order.poojaId?.emoji ?? ''} ${order.poojaId?.name ?? '—'}` },
                 { label: 'Temple', value: `${order.templeId?.name ?? '—'}, ${order.templeId?.location ?? ''}` },
                 { label: 'Date', value: formatDate(order.bookingDate) },
+                { label: 'Devotees', value: String(order.qty || 1) },
                 { label: 'Sankalp Name', value: order.sankalpName },
                 { label: 'Amount Paid', value: `₹${order.totalAmount?.toLocaleString()}` },
               ].map(({ label, value }) => (

@@ -35,6 +35,7 @@ export interface IOrder extends Document {
   whatsapp: string;
   sankalp?: string;          // wish / special message
   address?: string;          // for prasad delivery
+  qty: number;               // number of devotees
 
   // Selected chadhava items
   chadhavaItems: IOrderChadhava[];
@@ -87,6 +88,7 @@ const OrderSchema = new Schema<IOrder>(
     whatsapp: { type: String, required: true },
     sankalp: { type: String, default: "" },
     address: { type: String, default: "" },
+    qty: { type: Number, default: 1 },
 
     chadhavaItems: [OrderChadhavaSchema],
 
@@ -115,16 +117,15 @@ const OrderSchema = new Schema<IOrder>(
   { timestamps: true }
 );
 
-// Auto-generate a collision-safe bookingId before save  e.g. BK-1735012345-A3F
-// Using timestamp + random suffix instead of countDocuments() to avoid race conditions
-// that caused duplicate-key errors and prevented multiple orders from being saved.
-(OrderSchema as any).pre("save", function (this: IOrder, next: (err?: mongoose.CallbackError) => void) {
+// Auto-generate a collision-safe bookingId before save  e.g. BK-1LMXYZ-A3F
+// Uses timestamp + random suffix — no DB query, no race conditions.
+// Uses async style (no `next` param) which is required for Mongoose 7+.
+OrderSchema.pre("save", async function () {
   if (!this.bookingId) {
-    const timestamp = Date.now().toString(36).toUpperCase();          // base-36 timestamp
+    const timestamp = Date.now().toString(36).toUpperCase();               // base-36 timestamp
     const suffix = Math.random().toString(36).slice(2, 6).toUpperCase(); // 4-char random
     this.bookingId = `BK-${timestamp}-${suffix}`;
   }
-  next();
 });
 
 const Order: Model<IOrder> =
