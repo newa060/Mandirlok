@@ -40,9 +40,12 @@ export default function Navbar() {
       try {
         const res = await fetch("/api/auth/me");
         if (res.ok) {
-          const data = await res.json();
-          const name = data.user?.name || data.user?.email?.split("@")[0] || "User";
-          const email = data.user?.email || "";
+          const resData = await res.json();
+          // API returns { success: true, data: userObject }
+          const userObj = resData.data;
+
+          const name = userObj?.name || userObj?.email?.split("@")[0] || "User";
+          const email = userObj?.email || "";
           const initials = name
             .split(" ")
             .map((n: string) => n[0])
@@ -147,12 +150,12 @@ export default function Navbar() {
         <div className="flex whitespace-nowrap ml-48">
           <div className="top-marquee flex items-center gap-0">
             {[
-              "🙏 Trusted by 1 Million+ Devotees","🔒 100% Secure Payments","🛕 500+ Sacred Temples",
-              "📹 Video Proof Delivered","⚡ Participate in 2 Minutes","🌍 Devotees in 30+ Countries",
-              "🎁 Prasad Home Delivery","✅ 100% Authentic Rituals",
-              "🙏 Trusted by 1 Million+ Devotees","🔒 100% Secure Payments","🛕 500+ Sacred Temples",
-              "📹 Video Proof Delivered","⚡ Participate in 2 Minutes","🌍 Devotees in 30+ Countries",
-              "🎁 Prasad Home Delivery","✅ 100% Authentic Rituals",
+              "🙏 Trusted by 1 Million+ Devotees", "🔒 100% Secure Payments", "🛕 500+ Sacred Temples",
+              "📹 Video Proof Delivered", "⚡ Participate in 2 Minutes", "🌍 Devotees in 30+ Countries",
+              "🎁 Prasad Home Delivery", "✅ 100% Authentic Rituals",
+              "🙏 Trusted by 1 Million+ Devotees", "🔒 100% Secure Payments", "🛕 500+ Sacred Temples",
+              "📹 Video Proof Delivered", "⚡ Participate in 2 Minutes", "🌍 Devotees in 30+ Countries",
+              "🎁 Prasad Home Delivery", "✅ 100% Authentic Rituals",
             ].map((item, i) => (
               <span key={i} className="flex items-center gap-5 px-6 text-white/90 font-medium text-[11px]">
                 {item}<span className="text-orange-300/50">·</span>

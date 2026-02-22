@@ -23,10 +23,10 @@ export default function ProfilePage() {
         const fetchProfile = async () => {
             try {
                 const res = await fetch("/api/auth/me");
-                const data = await res.json();
+                const resData = await res.json();
 
-                if (data.success && data.user) {
-                    setProfile(data.user);
+                if (resData.success && resData.data) {
+                    setProfile(resData.data);
                 } else {
                     setError("Session expired. Please log in again.");
                 }
@@ -75,8 +75,8 @@ export default function ProfilePage() {
                                             key={item.label}
                                             href={item.href}
                                             className={`flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm transition-colors ${item.active
-                                                    ? "bg-[#fff8f0] text-[#ff7f0a] font-semibold border border-[#ffd9a8]"
-                                                    : "text-[#6b5b45] hover:bg-[#fdf6ee] hover:text-[#ff7f0a]"
+                                                ? "bg-[#fff8f0] text-[#ff7f0a] font-semibold border border-[#ffd9a8]"
+                                                : "text-[#6b5b45] hover:bg-[#fdf6ee] hover:text-[#ff7f0a]"
                                                 }`}
                                         >
                                             {item.label}

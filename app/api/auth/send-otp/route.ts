@@ -43,7 +43,7 @@ export async function POST(req: Request) {
 
     // Send email
     await transporter.sendMail({
-      from: `"Your App Name" <${process.env.EMAIL_USER}>`,
+      from: `"MandirLok" <${process.env.EMAIL_USER}>`,
       to: email,
       subject: "Your OTP Code",
       html: `

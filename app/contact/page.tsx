@@ -1,24 +1,23 @@
 "use client";
 
 import { useState } from "react";
-import Navbar from "@/components/layout/Navbar";
-import Footer from "@/components/layout/Footer";
 import {
+  MapPin,
   Phone,
   Mail,
-  MapPin,
-  MessageSquare,
   Clock,
-  CheckCircle,
+  CheckCircle2,
+  Send,
+  MessageSquare,
 } from "lucide-react";
 
-const CONTACT_REASONS = [
-  "Booking Issue",
-  "Payment Problem",
-  "Video Not Received",
-  "Pandit Complaint",
-  "Temple Inquiry",
-  "General Question",
+const SUBJECTS = [
+  "Booking Help",
+  "Payment Issue",
+  "Pooja Enquiry",
+  "Pandit Query",
+  "Temple Information",
+  "Technical Support",
   "Other",
 ];
 
@@ -27,255 +26,309 @@ export default function ContactPage() {
     name: "",
     email: "",
     phone: "",
-    reason: "",
+    subject: "",
     message: "",
   });
-  const [submitted, setSubmit] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [success, setSuccess] = useState(false);
+  const [error, setError] = useState("");
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleChange = (
+    e: React.ChangeEvent<
+      HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
+    >,
+  ) => {
+    setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }));
+    setError("");
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    setTimeout(() => {
+    setError("");
+
+    try {
+      const res = await fetch("/api/contact", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(form),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.error || "Something went wrong");
+      }
+
+      setSuccess(true);
+      setForm({ name: "", email: "", phone: "", subject: "", message: "" });
+    } catch (err: unknown) {
+      const message =
+        err instanceof Error ? err.message : "Failed to send message";
+      setError(message);
+    } finally {
       setLoading(false);
-      setSubmit(true);
-    }, 1200);
+    }
   };
 
   return (
-    <>
-      <Navbar />
-      <main className="pt-16 min-h-screen bg-[#fdf6ee]">
-        {/* ── Hero ── */}
-        <div className="bg-gradient-to-br from-[#8b0000] to-[#1a0a00] py-14 px-4 text-center text-white">
-          <span className="bg-white/10 border border-white/20 text-[#ffd9a8] text-xs font-semibold px-4 py-1.5 rounded-full mb-4 inline-block">
-            💬 We're Here to Help
+    <main className="min-h-screen bg-gray-50">
+      {/* Hero */}
+      <div className="bg-dark-temple py-14">
+        <div className="section-container text-center">
+          <span className="section-tag mb-4 inline-flex">
+            <MessageSquare size={12} />
+            GET IN TOUCH
           </span>
-          <h1 className="font-display font-bold text-3xl md:text-4xl text-white mb-3">
-            Contact Mandirlok
+          <h1 className="text-3xl md:text-4xl font-bold text-white mt-2">
+            How can we help you?
           </h1>
-          <p className="text-[#ffd9a8] max-w-xl mx-auto">
-            Any questions about your booking, payment, or pooja video? Our team
-            is available 7 days a week.
+          <p className="text-orange-200 mt-3 text-sm md:text-base max-w-xl mx-auto">
+            Our team is here to help you with bookings, payment issues, or any
+            queries about our poojas and services.
           </p>
         </div>
+      </div>
 
-        <div className="container-app py-12">
-          <div className="grid md:grid-cols-3 gap-8 max-w-5xl mx-auto">
-            {/* ── Contact Cards ── */}
-            <div className="space-y-4">
-              {[
-                {
-                  icon: <Phone size={20} />,
-                  title: "Call / WhatsApp",
-                  value: "+91 98765 43210",
-                  sub: "Mon–Sun 7AM–10PM",
-                  color: "#25D366",
-                },
-                {
-                  icon: <Mail size={20} />,
-                  title: "Email Us",
-                  value: "support@mandirlok.com",
-                  sub: "Reply within 4 hours",
-                  color: "#ff7f0a",
-                },
-                {
-                  icon: <Clock size={20} />,
-                  title: "Support Hours",
-                  value: "7AM – 10PM IST",
-                  sub: "7 days a week",
-                  color: "#8b0000",
-                },
-              ].map((c) => (
-                <div
-                  key={c.title}
-                  className="bg-white border border-[#f0dcc8] rounded-2xl p-5 flex gap-4 shadow-card"
-                >
-                  <div
-                    className="w-10 h-10 rounded-xl flex items-center justify-center text-white flex-shrink-0"
-                    style={{ background: c.color }}
-                  >
-                    {c.icon}
-                  </div>
-                  <div>
-                    <p className="font-semibold text-[#1a1209] text-sm">
-                      {c.title}
-                    </p>
-                    <p className="text-[#ff7f0a] text-sm font-medium">
-                      {c.value}
-                    </p>
-                    <p className="text-xs text-[#6b5b45]">{c.sub}</p>
-                  </div>
-                </div>
-              ))}
-
-              <div className="bg-[#fff8f0] border border-[#ffd9a8] rounded-2xl p-4">
-                <h4 className="font-semibold text-[#1a1209] text-sm mb-2">
-                  Common Solutions
-                </h4>
-                {[
-                  "Video not received → Check WhatsApp spam folder",
-                  "Payment failed → Amount auto-refunded in 5–7 days",
-                  "Booking issue → Share Booking ID for quick help",
-                ].map((s) => (
-                  <p
-                    key={s}
-                    className="text-xs text-[#6b5b45] py-1.5 border-b border-[#f0dcc8] last:border-0"
-                  >
-                    {s}
-                  </p>
-                ))}
-              </div>
+      <div className="section-container py-12">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
+          {/* Left — Info */}
+          <div className="space-y-6">
+            <div>
+              <h2 className="text-xl font-bold text-gray-900 mb-1">
+                Contact Info
+              </h2>
+              <p className="text-gray-500 text-sm">
+                We usually reply within 24 hours
+              </p>
             </div>
 
-            {/* ── Contact Form ── */}
-            <div className="md:col-span-2">
-              {submitted ? (
-                <div className="bg-white border border-[#f0dcc8] rounded-2xl p-10 shadow-card text-center">
-                  <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                    <CheckCircle size={32} className="text-green-500" />
+            {[
+              {
+                icon: <Phone size={18} className="text-orange-500" />,
+                label: "Phone / WhatsApp",
+                value: "+91 98765 43210",
+                sub: "Mon–Sat, 9 AM – 7 PM",
+              },
+              {
+                icon: <Mail size={18} className="text-orange-500" />,
+                label: "Email",
+                value: "support@mandirlok.com",
+                sub: "We reply within 24 hours",
+              },
+              {
+                icon: <MapPin size={18} className="text-orange-500" />,
+                label: "Office",
+                value: "Mandirlok Technologies",
+                sub: "India",
+              },
+              {
+                icon: <Clock size={18} className="text-orange-500" />,
+                label: "Working Hours",
+                value: "Mon – Sat",
+                sub: "9:00 AM – 7:00 PM IST",
+              },
+            ].map((item, i) => (
+              <div
+                key={i}
+                className="flex items-start gap-4 bg-white rounded-xl p-4 shadow-sm border border-gray-100"
+              >
+                <div className="w-10 h-10 bg-orange-50 rounded-full flex items-center justify-center shrink-0">
+                  {item.icon}
+                </div>
+                <div>
+                  <p className="text-xs text-gray-400 font-medium uppercase tracking-wide">
+                    {item.label}
+                  </p>
+                  <p className="font-semibold text-gray-800 text-sm mt-0.5">
+                    {item.value}
+                  </p>
+                  <p className="text-gray-400 text-xs">{item.sub}</p>
+                </div>
+              </div>
+            ))}
+
+            {/* Social / trust */}
+            <div className="bg-orange-50 border border-orange-100 rounded-xl p-4">
+              <p className="text-sm font-semibold text-orange-700 mb-1">
+                🙏 We're here for you
+              </p>
+              <p className="text-xs text-orange-600 leading-relaxed">
+                Whether it's a booking question, a payment concern, or just a
+                prayer request — we're always happy to help.
+              </p>
+            </div>
+          </div>
+
+          {/* Right — Form */}
+          <div className="lg:col-span-2">
+            <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8">
+              {success ? (
+                <div className="text-center py-10">
+                  <div className="w-20 h-20 bg-green-50 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <CheckCircle2 size={40} className="text-green-500" />
                   </div>
-                  <h3 className="font-display font-bold text-xl text-[#1a1209] mb-2">
-                    Message Sent!
+                  <h3 className="text-xl font-bold text-gray-900 mb-2">
+                    Message Sent! 🙏
                   </h3>
-                  <p className="text-[#6b5b45] text-sm mb-6">
-                    Our team will reply to <strong>{form.email}</strong> within
-                    4 hours. You'll also receive a WhatsApp confirmation.
+                  <p className="text-gray-500 text-sm max-w-sm mx-auto mb-6">
+                    Thank you for reaching out. We've received your message and
+                    will reply within 24 hours. Check your email for
+                    confirmation.
                   </p>
                   <button
-                    onClick={() => {
-                      setSubmit(false);
-                      setForm({
-                        name: "",
-                        email: "",
-                        phone: "",
-                        reason: "",
-                        message: "",
-                      });
-                    }}
-                    className="btn-saffron text-sm"
+                    onClick={() => setSuccess(false)}
+                    className="btn-outline text-sm px-6 py-2.5"
                   >
                     Send Another Message
                   </button>
                 </div>
               ) : (
-                <form
-                  onSubmit={handleSubmit}
-                  className="bg-white border border-[#f0dcc8] rounded-2xl p-6 shadow-card space-y-4"
-                >
-                  <h2 className="font-display font-semibold text-[#1a1209] mb-2">
-                    Send Us a Message
-                  </h2>
+                <form onSubmit={handleSubmit} className="space-y-5">
+                  <div>
+                    <h2 className="text-xl font-bold text-gray-900">
+                      Send us a message
+                    </h2>
+                    <p className="text-gray-400 text-sm mt-0.5">
+                      Fill the form below and we'll get back to you
+                    </p>
+                  </div>
 
-                  <div className="grid sm:grid-cols-2 gap-4">
+                  {/* Name + Email */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
-                      <label className="block text-[10px] font-bold text-[#6b5b45] uppercase tracking-widest mb-1.5">
-                        Your Name *
+                      <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                        Full Name <span className="text-red-500">*</span>
                       </label>
                       <input
-                        required
+                        type="text"
+                        name="name"
                         value={form.name}
-                        onChange={(e) =>
-                          setForm((f) => ({ ...f, name: e.target.value }))
-                        }
-                        placeholder="Full name"
-                        className="input-divine"
+                        onChange={handleChange}
+                        placeholder="Your name"
+                        required
+                        className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm outline-none focus:border-orange-400 focus:ring-2 focus:ring-orange-100 transition"
                       />
                     </div>
                     <div>
-                      <label className="block text-[10px] font-bold text-[#6b5b45] uppercase tracking-widest mb-1.5">
-                        Email *
+                      <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                        Email Address <span className="text-red-500">*</span>
                       </label>
                       <input
-                        required
                         type="email"
+                        name="email"
                         value={form.email}
-                        onChange={(e) =>
-                          setForm((f) => ({ ...f, email: e.target.value }))
-                        }
-                        placeholder="your@email.com"
-                        className="input-divine"
+                        onChange={handleChange}
+                        placeholder="you@email.com"
+                        required
+                        className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm outline-none focus:border-orange-400 focus:ring-2 focus:ring-orange-100 transition"
                       />
                     </div>
+                  </div>
+
+                  {/* Phone + Subject */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
-                      <label className="block text-[10px] font-bold text-[#6b5b45] uppercase tracking-widest mb-1.5">
-                        WhatsApp Number
+                      <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                        Phone / WhatsApp
                       </label>
                       <input
                         type="tel"
+                        name="phone"
                         value={form.phone}
-                        onChange={(e) =>
-                          setForm((f) => ({
-                            ...f,
-                            phone: e.target.value
-                              .replace(/\D/g, "")
-                              .slice(0, 10),
-                          }))
-                        }
-                        placeholder="10-digit number"
-                        className="input-divine"
+                        onChange={handleChange}
+                        placeholder="+91 98765 43210"
+                        className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm outline-none focus:border-orange-400 focus:ring-2 focus:ring-orange-100 transition"
                       />
                     </div>
                     <div>
-                      <label className="block text-[10px] font-bold text-[#6b5b45] uppercase tracking-widest mb-1.5">
-                        Reason for Contact *
+                      <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                        Subject
                       </label>
                       <select
-                        required
-                        value={form.reason}
-                        onChange={(e) =>
-                          setForm((f) => ({ ...f, reason: e.target.value }))
-                        }
-                        className="input-divine"
+                        name="subject"
+                        value={form.subject}
+                        onChange={handleChange}
+                        className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm outline-none focus:border-orange-400 focus:ring-2 focus:ring-orange-100 transition bg-white"
                       >
-                        <option value="">Select a reason</option>
-                        {CONTACT_REASONS.map((r) => (
-                          <option key={r}>{r}</option>
+                        <option value="">Select a subject</option>
+                        {SUBJECTS.map((s) => (
+                          <option key={s} value={s}>
+                            {s}
+                          </option>
                         ))}
                       </select>
                     </div>
                   </div>
 
+                  {/* Message */}
                   <div>
-                    <label className="block text-[10px] font-bold text-[#6b5b45] uppercase tracking-widest mb-1.5">
-                      Your Message *
+                    <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                      Message <span className="text-red-500">*</span>
                     </label>
                     <textarea
-                      required
+                      name="message"
                       value={form.message}
-                      onChange={(e) =>
-                        setForm((f) => ({ ...f, message: e.target.value }))
-                      }
-                      placeholder="Describe your issue or question in detail…"
+                      onChange={handleChange}
+                      placeholder="Describe your query in detail..."
+                      required
                       rows={5}
-                      className="input-divine resize-none"
+                      className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm outline-none focus:border-orange-400 focus:ring-2 focus:ring-orange-100 transition resize-none"
                     />
+                    <p className="text-xs text-gray-400 mt-1 text-right">
+                      {form.message.length}/500 characters
+                    </p>
                   </div>
 
+                  {/* Error */}
+                  {error && (
+                    <div className="bg-red-50 border border-red-100 rounded-xl px-4 py-3 text-red-600 text-sm">
+                      ⚠️ {error}
+                    </div>
+                  )}
+
+                  {/* Submit */}
                   <button
                     type="submit"
                     disabled={loading}
-                    className="btn-saffron w-full text-base flex items-center justify-center gap-2"
+                    className="btn-primary w-full justify-center text-sm py-3 disabled:opacity-60 disabled:cursor-not-allowed"
                   >
                     {loading ? (
-                      <span className="animate-spin">⟳</span>
+                      <>
+                        <svg
+                          className="animate-spin h-4 w-4"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                        >
+                          <circle
+                            className="opacity-25"
+                            cx="12"
+                            cy="12"
+                            r="10"
+                            stroke="currentColor"
+                            strokeWidth="4"
+                          />
+                          <path
+                            className="opacity-75"
+                            fill="currentColor"
+                            d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
+                          />
+                        </svg>
+                        Sending...
+                      </>
                     ) : (
-                      <MessageSquare size={16} />
+                      <>
+                        <Send size={16} />
+                        Send Message
+                      </>
                     )}
-                    {loading ? "Sending…" : "Send Message"}
                   </button>
-
-                  <p className="text-center text-xs text-[#6b5b45]">
-                    Or WhatsApp us directly at{" "}
-                    <strong className="text-[#25D366]">+91 98765 43210</strong>
-                  </p>
                 </form>
               )}
             </div>
           </div>
         </div>
-      </main>
-      <Footer />
-    </>
+      </div>
+    </main>
   );
 }

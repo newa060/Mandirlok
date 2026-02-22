@@ -1,122 +1,298 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import Link from "next/link";
+import { useParams } from "next/navigation";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
-import TempleImage, { TEMPLE_IMAGES } from "@/components/ui/TempleImage";
-import PoojaCard from "@/components/pooja/PoojaCard";
 import StarRating from "@/components/ui/StarRating";
 import Badge from "@/components/ui/Badge";
-import { ALL_POOJAS } from "@/components/pooja/PoojaData";
 import { MapPin, Clock, Globe, Phone, ChevronRight, Heart } from "lucide-react";
 
-// Temple data keyed by ID
-const TEMPLE_DATA: Record<
-  string,
-  {
-    id: number;
-    name: string;
-    imageKey: string;
-    deity: string;
-    location: string;
-    state: string;
-    about: string;
-    rating: number;
-    reviews: number;
-    openTime: string;
-    phone: string;
-    website: string;
-    mapUrl: string;
-    poojaIds: number[];
-    chadhavaItems: { id: number; name: string; price: number; emoji: string }[];
-    ratings: { stars: number; percent: number }[];
-    gallery: string[];
-  }
-> = {
-  "1": {
-    id: 1,
-    name: "Kashi Vishwanath Temple",
-    imageKey: "kashi-vishwanath",
-    deity: "Shiva",
-    location: "Vishwanath Gali, Varanasi, Uttar Pradesh",
-    state: "Uttar Pradesh",
-    rating: 4.9,
-    reviews: 12400,
-    about:
-      "The Kashi Vishwanath Temple is one of the most famous Hindu temples dedicated to Lord Shiva. It stands on the western bank of the holy river Ganga and is one of the twelve Jyotirlingas — the holiest of Shiva temples. The temple has been mentioned in the Puranas including the Kashi Khanda of Skanda Purana. It is visited by hundreds of thousands of devotees every year.",
-    openTime: "3:00 AM – 11:00 PM",
-    phone: "+91 98765 43210",
-    website: "shrikashivishwanath.org",
-    mapUrl: "https://maps.google.com/?q=Kashi+Vishwanath+Temple+Varanasi",
-    poojaIds: [101, 103, 106, 110, 112],
-    chadhavaItems: [
-      { id: 201, name: "Bel Patra", price: 51, emoji: "🌿" },
-      { id: 202, name: "Dhatura", price: 51, emoji: "🌸" },
-      { id: 203, name: "Flower Garland", price: 151, emoji: "💐" },
-      { id: 204, name: "Prasad Thali", price: 251, emoji: "🍱" },
-      { id: 205, name: "Panchamrit", price: 251, emoji: "🥛" },
-      { id: 206, name: "Pure Ghee Diya", price: 251, emoji: "🪔" },
-    ],
-    ratings: [
-      { stars: 5, percent: 83 },
-      { stars: 4, percent: 12 },
-      { stars: 3, percent: 3 },
-      { stars: 2, percent: 1 },
-      { stars: 1, percent: 1 },
-    ],
-    gallery: ["kashi-vishwanath", "somnath", "mahakaleshwar"],
-  },
-  "2": {
-    id: 2,
-    name: "Tirupati Balaji Temple",
-    imageKey: "tirupati-balaji",
-    deity: "Vishnu",
-    location: "Tirumala Hills, Tirupati, Andhra Pradesh",
-    state: "Andhra Pradesh",
-    rating: 4.9,
-    reviews: 23100,
-    about:
-      "The Tirumala Venkateswara Temple is a famous Hindu temple located on the Tirumala Hills in Tirupati, Andhra Pradesh. The main deity, Lord Venkateswara, is a form of Lord Vishnu believed to have appeared here to save mankind. It is the richest and most visited religious temple in the world, receiving an average of 50,000–100,000 pilgrims daily.",
-    openTime: "2:30 AM – 1:00 AM",
-    phone: "+91 877 226 5000",
-    website: "tirumala.org",
-    mapUrl: "https://maps.google.com/?q=Tirupati+Balaji+Temple",
-    poojaIds: [102, 105, 108],
-    chadhavaItems: [
-      { id: 301, name: "Lotus Flower", price: 201, emoji: "🪷" },
-      { id: 302, name: "Tulsi Leaves", price: 51, emoji: "🌱" },
-      { id: 303, name: "Modak Offering", price: 251, emoji: "🥮" },
-    ],
-    ratings: [
-      { stars: 5, percent: 87 },
-      { stars: 4, percent: 9 },
-      { stars: 3, percent: 2 },
-      { stars: 2, percent: 1 },
-      { stars: 1, percent: 1 },
-    ],
-    gallery: ["tirupati-balaji", "meenakshi", "badrinath"],
-  },
-};
+// ── Types ──────────────────────────────────────────────────────────────────────
+interface Temple {
+  _id: string;
+  name: string;
+  slug: string;
+  location: string;
+  city: string;
+  state: string;
+  category: string;
+  deity: string;
+  description: string;
+  about: string;
+  images: string[];
+  rating: number;
+  totalReviews: number;
+  pujasAvailable: number;
+  openTime: string;
+  phone: string;
+  website: string;
+  mapUrl: string;
+}
 
-// Fallback for temples 3–12
-const DEFAULT_TEMPLE = TEMPLE_DATA["1"];
+interface Pooja {
+  _id: string;
+  name: string;
+  slug: string;
+  emoji: string;
+  description: string;
+  price: number;
+  duration: string;
+  tag: string;
+  tagColor: string;
+  rating: number;
+  totalReviews: number;
+  availableDays: string;
+  benefits: string[];
+  isFeatured: boolean;
+}
 
-export default function TempleDetailPage({
-  params,
+interface ChadhavaItem {
+  _id: string;
+  name: string;
+  emoji: string;
+  price: number;
+  description: string;
+}
+
+// ── Image Placeholder (matches temples/page.tsx style) ────────────────────────
+function ImagePlaceholder({
+  label = "",
+  className = "",
 }: {
-  params: { id: string };
+  label?: string;
+  className?: string;
 }) {
-  const temple = TEMPLE_DATA[params.id] ?? {
-    ...DEFAULT_TEMPLE,
-    id: parseInt(params.id),
-  };
-  const templePoojas = ALL_POOJAS.filter((p) => temple.poojaIds.includes(p.id));
+  return (
+    <div
+      className={`relative bg-gradient-to-br from-orange-800/60 to-red-950/70 flex items-center justify-center overflow-hidden ${className}`}
+    >
+      <div
+        className="absolute inset-0 opacity-10"
+        style={{
+          backgroundImage:
+            "url(\"data:image/svg+xml,%3Csvg width='40' height='40' viewBox='0 0 40 40' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='%23ffffff' fill-opacity='0.8'%3E%3Cpath d='M0 40L40 0H20L0 20M40 40V20L20 40'/%3E%3C/g%3E%3C/svg%3E\")",
+        }}
+      />
+      <div className="flex flex-col items-center text-white/50 gap-1 z-10 p-4">
+        <span className="text-4xl">🛕</span>
+        {label && (
+          <p className="text-xs text-center line-clamp-2 max-w-[140px]">
+            {label}
+          </p>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ── Pooja Row (horizontal card for sidebar + main list) ───────────────────────
+function PoojaRow({
+  pooja,
+  showPrice = true,
+}: {
+  pooja: Pooja;
+  showPrice?: boolean;
+}) {
+  return (
+    <Link
+      href={`/poojas/${pooja.slug}`}
+      className="flex items-center justify-between py-2.5 px-3 rounded-xl hover:bg-[#fff8f0] border border-transparent hover:border-[#ffd9a8] transition-all"
+    >
+      <div className="flex items-center gap-2">
+        <span className="text-lg">{pooja.emoji || "🪔"}</span>
+        <div>
+          <p className="text-xs font-semibold text-[#1a1209] line-clamp-1">
+            {pooja.name}
+          </p>
+          <p className="text-[10px] text-[#6b5b45]">{pooja.duration}</p>
+        </div>
+      </div>
+      {showPrice && (
+        <span className="text-xs font-bold text-[#ff7f0a] shrink-0 ml-2">
+          ₹{pooja.price?.toLocaleString()}
+        </span>
+      )}
+    </Link>
+  );
+}
+
+// ── Pooja Card (horizontal, main list) ───────────────────────────────────────
+function PoojaCard({ pooja }: { pooja: Pooja }) {
+  return (
+    <Link
+      href={`/poojas/${pooja.slug}`}
+      className="group flex gap-4 bg-white border border-[#f0dcc8] rounded-2xl p-4 shadow-sm hover:shadow-md hover:border-[#ffbd6e] transition-all"
+    >
+      {/* Emoji / image thumb */}
+      <div className="w-16 h-16 rounded-xl bg-gradient-to-br from-orange-50 to-amber-100 flex items-center justify-center shrink-0 relative overflow-hidden">
+        <span className="text-3xl">{pooja.emoji || "🪔"}</span>
+        {pooja.tag && (
+          <span
+            className={`absolute top-1 left-1 text-white text-[8px] font-bold px-1.5 py-0.5 rounded-full ${pooja.tagColor || "bg-orange-500"}`}
+          >
+            {pooja.tag}
+          </span>
+        )}
+      </div>
+
+      {/* Content */}
+      <div className="flex-1 min-w-0">
+        <h3 className="font-semibold text-[#1a1209] text-sm group-hover:text-[#ff7f0a] transition-colors line-clamp-1">
+          {pooja.name}
+        </h3>
+        <p className="text-[#6b5b45] text-xs line-clamp-1 mb-2">
+          {pooja.description}
+        </p>
+
+        <div className="flex items-center gap-3 text-[10px] text-[#6b5b45]">
+          <span className="flex items-center gap-1">
+            <Clock size={10} /> {pooja.duration}
+          </span>
+          <span className="flex items-center gap-1">
+            ⭐ {pooja.rating?.toFixed(1)} (
+            {pooja.totalReviews?.toLocaleString()})
+          </span>
+          <span className="text-[#ff7f0a]">{pooja.availableDays}</span>
+        </div>
+      </div>
+
+      {/* Price */}
+      <div className="shrink-0 text-right flex flex-col items-end justify-between">
+        <p className="font-bold text-[#ff7f0a] text-base">
+          ₹{pooja.price?.toLocaleString()}
+        </p>
+        <span className="text-[10px] bg-[#fff8f0] border border-[#ffd9a8] text-[#ff7f0a] font-semibold px-2 py-0.5 rounded-full">
+          Book →
+        </span>
+      </div>
+    </Link>
+  );
+}
+
+// ── Loading Skeleton ───────────────────────────────────────────────────────────
+function PageSkeleton() {
+  return (
+    <>
+      <Navbar />
+      <main className="pt-16 min-h-screen bg-[#fdf6ee]">
+        {/* Hero skeleton */}
+        <div className="h-72 md:h-96 bg-gray-200 animate-pulse" />
+        <div className="container-app py-8">
+          <div className="grid lg:grid-cols-3 gap-8">
+            <div className="lg:col-span-2 space-y-4">
+              {[1, 2, 3].map((i) => (
+                <div
+                  key={i}
+                  className="bg-white rounded-2xl p-6 animate-pulse space-y-3"
+                >
+                  <div className="h-4 bg-gray-200 rounded w-1/3" />
+                  <div className="h-3 bg-gray-200 rounded w-full" />
+                  <div className="h-3 bg-gray-200 rounded w-5/6" />
+                </div>
+              ))}
+            </div>
+            <div className="bg-white rounded-2xl p-5 animate-pulse h-64" />
+          </div>
+        </div>
+      </main>
+      <Footer />
+    </>
+  );
+}
+
+// ── Main Page ──────────────────────────────────────────────────────────────────
+export default function TempleDetailPage() {
+  const params = useParams();
+  const id = params?.id as string;
+
+  const [temple, setTemple] = useState<Temple | null>(null);
+  const [poojas, setPoojas] = useState<Pooja[]>([]);
+  const [chadhavaItems, setChadhavaItems] = useState<ChadhavaItem[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [wishlisted, setWishlisted] = useState(false);
+
+  // ── Fetch from real API ────────────────────────────────────────────────────
+  useEffect(() => {
+    if (!id) return;
+
+    async function fetchTemple() {
+      try {
+        setLoading(true);
+        const res = await fetch(`/api/temples/${id}`);
+        const data = await res.json();
+
+        if (!data.success) {
+          setError(data.message || "Temple not found");
+          return;
+        }
+
+        setTemple(data.data.temple);
+        setPoojas(data.data.poojas || []);
+        setChadhavaItems(data.data.chadhavaItems || []);
+      } catch (err) {
+        console.error(err);
+        setError("Failed to load temple. Please try again.");
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    fetchTemple();
+  }, [id]);
+
+  // ── Loading ────────────────────────────────────────────────────────────────
+  if (loading) return <PageSkeleton />;
+
+  // ── Error / Not Found ──────────────────────────────────────────────────────
+  if (error || !temple) {
+    return (
+      <>
+        <Navbar />
+        <main className="pt-16 min-h-screen bg-[#fdf6ee] flex items-center justify-center">
+          <div className="text-center max-w-sm px-4">
+            <span className="text-6xl block mb-4">🛕</span>
+            <h2 className="text-xl font-bold text-[#1a1209] mb-2">
+              Temple Not Found
+            </h2>
+            <p className="text-[#6b5b45] text-sm mb-6">
+              {error || "This temple could not be found."}
+            </p>
+            <Link href="/temples" className="btn-primary text-sm">
+              Browse All Temples
+            </Link>
+          </div>
+        </main>
+        <Footer />
+      </>
+    );
+  }
+
+  // ── Computed rating breakdown (generated from real rating value) ───────────
+  // Since we don't store per-star breakdown in DB, we generate a realistic
+  // distribution from the overall rating. Swap this with real Review data later.
+  const ratingBreakdown = [5, 4, 3, 2, 1].map((star) => {
+    const diff = Math.abs(star - temple.rating);
+    const percent =
+      star === Math.round(temple.rating)
+        ? 65
+        : star === Math.round(temple.rating) - 1
+          ? 20
+          : star === Math.round(temple.rating) + 1
+            ? 10
+            : diff <= 2
+              ? 3
+              : 2;
+    return { star, percent };
+  });
 
   return (
     <>
       <Navbar />
       <main className="pt-16 min-h-screen bg-[#fdf6ee]">
-        {/* ── Breadcrumb ── */}
+        {/* ── Breadcrumb ────────────────────────────────────────────────── */}
         <div className="bg-white border-b border-[#f0dcc8]">
           <div className="container-app py-3 flex items-center gap-2 text-xs text-[#6b5b45]">
             <Link href="/" className="hover:text-[#ff7f0a] transition-colors">
@@ -134,14 +310,21 @@ export default function TempleDetailPage({
           </div>
         </div>
 
-        {/* ── Hero Image ── */}
+        {/* ── Hero Image ────────────────────────────────────────────────── */}
         <div className="relative h-72 md:h-96 overflow-hidden">
-          <TempleImage
-            templeKey={temple.imageKey}
-            className="w-full h-full"
-            showOverlay
-            overlayOpacity={0.35}
-          />
+          {temple.images?.[0] ? (
+            <img
+              src={temple.images[0]}
+              alt={temple.name}
+              className="w-full h-full object-cover"
+            />
+          ) : (
+            <ImagePlaceholder className="w-full h-full" label={temple.name} />
+          )}
+
+          {/* Dark gradient overlay */}
+          <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
+
           {/* Overlaid info */}
           <div className="absolute bottom-0 left-0 right-0 p-6 z-10">
             <div className="container-app">
@@ -150,7 +333,7 @@ export default function TempleDetailPage({
                   <Badge variant="gold" className="mb-2">
                     {temple.deity}
                   </Badge>
-                  <h1 className="font-display font-bold text-3xl md:text-4xl text-white mb-1">
+                  <h1 className="font-display font-bold text-3xl md:text-4xl text-white mb-1 leading-tight">
                     {temple.name}
                   </h1>
                   <div className="flex items-center gap-1.5 text-white/80 text-sm">
@@ -158,6 +341,7 @@ export default function TempleDetailPage({
                     {temple.location}
                   </div>
                 </div>
+
                 <div className="flex items-center gap-3">
                   <div className="bg-white/15 backdrop-blur border border-white/30 rounded-xl px-4 py-2 text-center">
                     <p className="text-xl font-bold text-[#ffd9a8]">
@@ -169,11 +353,22 @@ export default function TempleDetailPage({
                       className="justify-center"
                     />
                     <p className="text-white/70 text-[10px]">
-                      {(temple.reviews / 1000).toFixed(1)}k reviews
+                      {temple.totalReviews >= 1000
+                        ? `${(temple.totalReviews / 1000).toFixed(1)}k`
+                        : temple.totalReviews}{" "}
+                      reviews
                     </p>
                   </div>
-                  <button className="bg-white/15 backdrop-blur border border-white/30 rounded-xl p-3 text-white hover:bg-white/25 transition-colors">
-                    <Heart size={18} />
+                  <button
+                    onClick={() => setWishlisted((v) => !v)}
+                    className="bg-white/15 backdrop-blur border border-white/30 rounded-xl p-3 text-white hover:bg-white/25 transition-colors"
+                  >
+                    <Heart
+                      size={18}
+                      className={
+                        wishlisted ? "fill-rose-400 text-rose-400" : ""
+                      }
+                    />
                   </button>
                 </div>
               </div>
@@ -181,9 +376,10 @@ export default function TempleDetailPage({
           </div>
         </div>
 
+        {/* ── Main Content ──────────────────────────────────────────────── */}
         <div className="container-app py-8">
           <div className="grid lg:grid-cols-3 gap-8">
-            {/* ── LEFT / MAIN ── */}
+            {/* ── LEFT / MAIN ─────────────────────────────────────────── */}
             <div className="lg:col-span-2 space-y-6">
               {/* About */}
               <div className="bg-white border border-[#f0dcc8] rounded-2xl p-6 shadow-card">
@@ -191,8 +387,9 @@ export default function TempleDetailPage({
                   About the Temple
                 </h2>
                 <p className="text-sm text-[#6b5b45] leading-relaxed mb-4">
-                  {temple.about}
+                  {temple.about || temple.description}
                 </p>
+
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs text-[#6b5b45]">
                   <div className="flex items-center gap-2 bg-[#fff8f0] border border-[#f0dcc8] rounded-xl p-2.5">
                     <Clock size={14} className="text-[#ff7f0a] flex-shrink-0" />
@@ -200,49 +397,62 @@ export default function TempleDetailPage({
                       <p className="font-semibold text-[#1a1209] text-[11px]">
                         Temple Hours
                       </p>
-                      <p>{temple.openTime}</p>
+                      <p>{temple.openTime || "6:00 AM – 10:00 PM"}</p>
                     </div>
                   </div>
-                  <div className="flex items-center gap-2 bg-[#fff8f0] border border-[#f0dcc8] rounded-xl p-2.5">
-                    <Phone size={14} className="text-[#ff7f0a] flex-shrink-0" />
-                    <div>
-                      <p className="font-semibold text-[#1a1209] text-[11px]">
-                        Contact
-                      </p>
-                      <p>{temple.phone}</p>
+                  {temple.phone && (
+                    <div className="flex items-center gap-2 bg-[#fff8f0] border border-[#f0dcc8] rounded-xl p-2.5">
+                      <Phone
+                        size={14}
+                        className="text-[#ff7f0a] flex-shrink-0"
+                      />
+                      <div>
+                        <p className="font-semibold text-[#1a1209] text-[11px]">
+                          Contact
+                        </p>
+                        <p>{temple.phone}</p>
+                      </div>
                     </div>
-                  </div>
-                  <div className="flex items-center gap-2 bg-[#fff8f0] border border-[#f0dcc8] rounded-xl p-2.5">
-                    <Globe size={14} className="text-[#ff7f0a] flex-shrink-0" />
-                    <div>
-                      <p className="font-semibold text-[#1a1209] text-[11px]">
-                        Website
-                      </p>
-                      <p className="truncate">{temple.website}</p>
+                  )}
+                  {temple.website && (
+                    <div className="flex items-center gap-2 bg-[#fff8f0] border border-[#f0dcc8] rounded-xl p-2.5">
+                      <Globe
+                        size={14}
+                        className="text-[#ff7f0a] flex-shrink-0"
+                      />
+                      <div>
+                        <p className="font-semibold text-[#1a1209] text-[11px]">
+                          Website
+                        </p>
+                        <p className="truncate">{temple.website}</p>
+                      </div>
                     </div>
-                  </div>
+                  )}
                 </div>
               </div>
 
-              {/* Photo Gallery */}
-              <div>
-                <h2 className="font-display font-semibold text-[#1a1209] mb-3">
-                  Temple Gallery
-                </h2>
-                <div className="grid grid-cols-3 gap-2 rounded-2xl overflow-hidden">
-                  {temple.gallery.map((key, i) => (
-                    <div
-                      key={key}
-                      className={`relative overflow-hidden ${i === 0 ? "row-span-2 h-64" : "h-[7.75rem]"}`}
-                    >
-                      <TempleImage
-                        templeKey={key}
-                        className="w-full h-full hover:scale-105 transition-transform duration-500"
-                      />
-                    </div>
-                  ))}
+              {/* Gallery — only show if real images exist */}
+              {temple.images?.length > 1 && (
+                <div>
+                  <h2 className="font-display font-semibold text-[#1a1209] mb-3">
+                    Temple Gallery
+                  </h2>
+                  <div className="grid grid-cols-3 gap-2 rounded-2xl overflow-hidden">
+                    {temple.images.slice(0, 3).map((img, i) => (
+                      <div
+                        key={img}
+                        className={`relative overflow-hidden ${i === 0 ? "row-span-2 h-64" : "h-[7.75rem]"}`}
+                      >
+                        <img
+                          src={img}
+                          alt={`${temple.name} ${i + 1}`}
+                          className="w-full h-full object-cover hover:scale-105 transition-transform duration-500"
+                        />
+                      </div>
+                    ))}
+                  </div>
                 </div>
-              </div>
+              )}
 
               {/* Poojas */}
               <div>
@@ -250,47 +460,57 @@ export default function TempleDetailPage({
                   <h2 className="font-display font-semibold text-[#1a1209]">
                     Poojas at This Temple
                   </h2>
-                  <Badge variant="saffron">
-                    {templePoojas.length} Available
-                  </Badge>
+                  <Badge variant="saffron">{poojas.length} Available</Badge>
                 </div>
-                <div className="space-y-3">
-                  {templePoojas.map((pooja) => (
-                    <PoojaCard
-                      key={pooja.id}
-                      pooja={pooja}
-                      variant="horizontal"
-                    />
-                  ))}
-                </div>
+
+                {poojas.length === 0 ? (
+                  <div className="bg-white border border-[#f0dcc8] rounded-2xl p-8 text-center">
+                    <span className="text-4xl block mb-2">🪔</span>
+                    <p className="text-[#6b5b45] text-sm">
+                      No poojas available at this temple yet.
+                    </p>
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    {poojas.map((pooja) => (
+                      <PoojaCard key={pooja._id} pooja={pooja} />
+                    ))}
+                  </div>
+                )}
               </div>
 
-              {/* Chadhava - Price tag removed from offerings */}
-              <div>
-                <h2 className="font-display font-semibold text-[#1a1209] mb-4">
-                  Chadhava Offerings
-                </h2>
-                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                  {temple.chadhavaItems.map((item) => (
-                    <div
-                      key={item.id}
-                      className="bg-white border border-[#f0dcc8] rounded-xl p-4 text-center hover:border-[#ffbd6e] hover:shadow-sm transition-all"
-                    >
-                      <div className="text-3xl mb-2">{item.emoji}</div>
-                      <p className="text-xs font-semibold text-[#1a1209] mb-1">
-                        {item.name}
-                      </p>
-                      {/* Price tag removed from here */}
-                      <Link
-                        href="/chadhava"
-                        className="block bg-gradient-to-r from-[#ff7f0a] to-[#ff9b30] text-white text-[10px] font-bold py-1.5 rounded-full hover:shadow-sm transition-all"
+              {/* Chadhava */}
+              {chadhavaItems.length > 0 && (
+                <div>
+                  <h2 className="font-display font-semibold text-[#1a1209] mb-4">
+                    Chadhava Offerings
+                  </h2>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                    {chadhavaItems.map((item) => (
+                      <div
+                        key={item._id}
+                        className="bg-white border border-[#f0dcc8] rounded-xl p-4 text-center hover:border-[#ffbd6e] hover:shadow-sm transition-all"
                       >
-                        Add Offering
-                      </Link>
-                    </div>
-                  ))}
+                        <div className="text-3xl mb-2">{item.emoji}</div>
+                        <p className="text-xs font-semibold text-[#1a1209] mb-1">
+                          {item.name}
+                        </p>
+                        {item.description && (
+                          <p className="text-[10px] text-[#6b5b45] mb-2 line-clamp-2">
+                            {item.description}
+                          </p>
+                        )}
+                        <Link
+                          href="/chadhava"
+                          className="block bg-gradient-to-r from-[#ff7f0a] to-[#ff9b30] text-white text-[10px] font-bold py-1.5 rounded-full hover:shadow-sm transition-all"
+                        >
+                          Add Offering
+                        </Link>
+                      </div>
+                    ))}
+                  </div>
                 </div>
-              </div>
+              )}
 
               {/* Ratings Breakdown */}
               <div className="bg-white border border-[#f0dcc8] rounded-2xl p-6 shadow-card">
@@ -308,22 +528,25 @@ export default function TempleDetailPage({
                       className="justify-center my-1"
                     />
                     <p className="text-xs text-[#6b5b45]">
-                      {(temple.reviews / 1000).toFixed(1)}k ratings
+                      {temple.totalReviews >= 1000
+                        ? `${(temple.totalReviews / 1000).toFixed(1)}k`
+                        : temple.totalReviews}{" "}
+                      ratings
                     </p>
                   </div>
                   <div className="flex-1">
-                    {temple.ratings.map(({ stars, percent }) => (
+                    {ratingBreakdown.map(({ star, percent }) => (
                       <div
-                        key={stars}
+                        key={star}
                         className="flex items-center gap-2 mb-1.5"
                       >
                         <span className="text-xs text-[#6b5b45] w-4 text-right">
-                          {stars}
+                          {star}
                         </span>
                         <span className="text-[#f0bc00] text-xs">★</span>
                         <div className="flex-1 bg-[#f0dcc8] rounded-full h-1.5 overflow-hidden">
                           <div
-                            className="bg-[#ff7f0a] h-full rounded-full transition-all"
+                            className="bg-[#ff7f0a] h-full rounded-full"
                             style={{ width: `${percent}%` }}
                           />
                         </div>
@@ -346,53 +569,53 @@ export default function TempleDetailPage({
                     </p>
                     <p className="text-xs text-[#6b5b45]">{temple.location}</p>
                   </div>
-                  <a
-                    href={temple.mapUrl}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="bg-gradient-to-r from-[#ff7f0a] to-[#ff9b30] text-white text-xs font-semibold px-5 py-2 rounded-full hover:shadow-sm transition-all"
-                  >
-                    Open in Google Maps →
-                  </a>
+                  {temple.mapUrl && (
+                    <a
+                      href={temple.mapUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="bg-gradient-to-r from-[#ff7f0a] to-[#ff9b30] text-white text-xs font-semibold px-5 py-2 rounded-full hover:shadow-sm transition-all"
+                    >
+                      Open in Google Maps →
+                    </a>
+                  )}
                 </div>
               </div>
             </div>
 
-            {/* ── RIGHT SIDEBAR ── */}
+            {/* ── RIGHT SIDEBAR ──────────────────────────────────────── */}
             <div className="space-y-5">
-              {/* Quick Book - Button text changed */}
+              {/* Quick Book */}
               <div className="bg-white border border-[#f0dcc8] rounded-2xl p-5 shadow-card sticky top-24">
                 <h3 className="font-display font-semibold text-[#1a1209] mb-4">
                   Participate in a Pooja
                 </h3>
-                <div className="space-y-2 mb-5">
-                  {templePoojas.slice(0, 4).map((p) => (
+
+                {poojas.length > 0 ? (
+                  <>
+                    <div className="space-y-1 mb-5">
+                      {poojas.slice(0, 4).map((pooja) => (
+                        <PoojaRow
+                          key={pooja._id}
+                          pooja={pooja}
+                          showPrice={false}
+                        />
+                      ))}
+                    </div>
+
                     <Link
-                      key={p.id}
-                      href={`/poojas/${p.id}`}
-                      className="flex items-center justify-between py-2.5 px-3 rounded-xl hover:bg-[#fff8f0] border border-transparent hover:border-[#ffd9a8] transition-all"
+                      href={`/poojas/${poojas[0].slug}`}
+                      className="w-full block text-center bg-gradient-to-r from-[#ff7f0a] to-[#ff9b30] text-white font-semibold text-sm py-3 rounded-xl shadow-[0_4px_15px_rgba(255,127,10,0.3)] hover:shadow-[0_6px_25px_rgba(255,127,10,0.45)] transition-all mb-3"
                     >
-                      <div className="flex items-center gap-2">
-                        <span className="text-lg">{p.emoji}</span>
-                        <div>
-                          <p className="text-xs font-semibold text-[#1a1209]">
-                            {p.name}
-                          </p>
-                          <p className="text-[10px] text-[#6b5b45]">
-                            {p.duration}
-                          </p>
-                        </div>
-                      </div>
-                      {/* Price tag removed from here */}
+                      🙏 Participate in a Pooja
                     </Link>
-                  ))}
-                </div>
-                <Link
-                  href={`/poojas/${temple.poojaIds[0]}`}
-                  className="w-full block text-center bg-gradient-to-r from-[#ff7f0a] to-[#ff9b30] text-white font-semibold text-sm py-3 rounded-xl shadow-[0_4px_15px_rgba(255,127,10,0.3)] hover:shadow-[0_6px_25px_rgba(255,127,10,0.45)] transition-all mb-3"
-                >
-                  🙏 Participate in a Pooja
-                </Link>
+                  </>
+                ) : (
+                  <p className="text-xs text-[#6b5b45] mb-4 text-center py-2">
+                    No poojas listed yet for this temple.
+                  </p>
+                )}
+
                 <Link
                   href="/chadhava"
                   className="w-full block text-center border-2 border-[#ff7f0a] text-[#ff7f0a] font-semibold text-sm py-2.5 rounded-xl hover:bg-[#fff8f0] transition-colors"
@@ -424,6 +647,47 @@ export default function TempleDetailPage({
                     {t}
                   </p>
                 ))}
+              </div>
+
+              {/* Temple Stats */}
+              <div className="bg-white border border-[#f0dcc8] rounded-2xl p-5">
+                <h4 className="font-semibold text-[#1a1209] text-sm mb-3">
+                  Temple At a Glance
+                </h4>
+                <div className="space-y-2 text-xs text-[#6b5b45]">
+                  <div className="flex justify-between">
+                    <span>Category</span>
+                    <span className="font-semibold text-[#1a1209]">
+                      {temple.category}
+                    </span>
+                  </div>
+                  <div className="flex justify-between border-t border-[#f0dcc8] pt-2">
+                    <span>Main Deity</span>
+                    <span className="font-semibold text-[#1a1209]">
+                      {temple.deity}
+                    </span>
+                  </div>
+                  <div className="flex justify-between border-t border-[#f0dcc8] pt-2">
+                    <span>Location</span>
+                    <span className="font-semibold text-[#1a1209]">
+                      {temple.city}, {temple.state}
+                    </span>
+                  </div>
+                  <div className="flex justify-between border-t border-[#f0dcc8] pt-2">
+                    <span>Poojas Available</span>
+                    <span className="font-semibold text-[#ff7f0a]">
+                      {poojas.length}
+                    </span>
+                  </div>
+                  <div className="flex justify-between border-t border-[#f0dcc8] pt-2">
+                    <span>Devotees Served</span>
+                    <span className="font-semibold text-[#1a1209]">
+                      {temple.totalReviews >= 1000
+                        ? `${(temple.totalReviews / 1000).toFixed(1)}k+`
+                        : `${temple.totalReviews}+`}
+                    </span>
+                  </div>
+                </div>
               </div>
             </div>
           </div>

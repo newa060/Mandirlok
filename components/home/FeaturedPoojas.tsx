@@ -1,186 +1,188 @@
-import Link from 'next/link'
-import { Clock, Star } from 'lucide-react'
+"use client";
 
-const poojas = [
-  {
-    id: 1,
-    name: 'Rudrabhishek',
-    temple: 'Kashi Vishwanath',
-    price: 1100,
-    originalPrice: 1500,
-    duration: '45 min',
-    rating: 4.9,
-    reviews: 3240,
-    emoji: '🪔',
-    benefit: 'Health & Prosperity',
-    tag: 'Best Seller',
-  },
-  {
-    id: 2,
-    name: 'Satyanarayan Katha',
-    temple: 'Siddhivinayak',
-    price: 2100,
-    originalPrice: 2800,
-    duration: '2 hrs',
-    rating: 4.8,
-    reviews: 1890,
-    emoji: '🌸',
-    benefit: 'Success & Peace',
-    tag: 'Popular',
-  },
-  {
-    id: 3,
-    name: 'Navgrah Puja',
-    temple: 'Kashi Vishwanath',
-    price: 1500,
-    originalPrice: 2000,
-    duration: '60 min',
-    rating: 4.7,
-    reviews: 2100,
-    emoji: '⭐',
-    benefit: 'Remove Obstacles',
-    tag: 'Trending',
-  },
-  {
-    id: 4,
-    name: 'Ganesh Pooja',
-    temple: 'Siddhivinayak',
-    price: 800,
-    originalPrice: 1100,
-    duration: '30 min',
-    rating: 4.9,
-    reviews: 4500,
-    emoji: '🐘',
-    benefit: 'New Beginnings',
-    tag: 'Must Book',
-  },
-  {
-    id: 5,
-    name: 'Lakshmi Puja',
-    temple: 'Tirupati Balaji',
-    price: 1200,
-    originalPrice: 1600,
-    duration: '45 min',
-    rating: 4.8,
-    reviews: 2900,
-    emoji: '💛',
-    benefit: 'Wealth & Fortune',
-    tag: 'Popular',
-  },
-  {
-    id: 6,
-    name: 'Mahamrityunjaya Jaap',
-    temple: 'Kashi Vishwanath',
-    price: 3100,
-    originalPrice: 4000,
-    duration: '3 hrs',
-    rating: 4.9,
-    reviews: 1560,
-    emoji: '🙏',
-    benefit: 'Health & Long Life',
-    tag: 'Sacred',
-  },
-]
+import { useEffect, useState } from "react";
+import Link from "next/link";
+import Image from "next/image";
+import { Star, Clock, ArrowRight, Flame } from "lucide-react";
 
-const badgeColors: Record<string, string> = {
-  'Best Seller': '#8b0000',
-  'Popular':     '#ff7f0a',
-  'Trending':    '#f0bc00',
-  'Must Book':   '#8b0000',
-  'Sacred':      '#1a6b1a',
+interface Pooja {
+  _id: string;
+  name: string;
+  slug: string;
+  deity: string;
+  emoji: string;
+  description: string;
+  price: number;
+  duration: string;
+  rating: number;
+  totalReviews: number;
+  tag: string;
+  tagColor: string;
+  isFeatured: boolean;
+  images: string[];
+  templeId: {
+    _id: string;
+    name: string;
+    city: string;
+  };
 }
 
 export default function FeaturedPoojas() {
+  const [poojas, setPoojas] = useState<Pooja[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    async function fetchFeaturedPoojas() {
+      try {
+        const res = await fetch("/api/poojas?featured=true&limit=6");
+        const data = await res.json();
+        setPoojas(data.poojas || []);
+      } catch (err) {
+        console.error("Failed to fetch featured poojas", err);
+      } finally {
+        setLoading(false);
+      }
+    }
+    fetchFeaturedPoojas();
+  }, []);
+
   return (
-    <section className="section-py bg-white">
-      <div className="container-app">
-        {/* ── Header ── */}
-        <div className="text-center mb-10">
-          <span className="badge-saffron mb-3 inline-block">Sacred Rituals</span>
-          <h2 className="heading-lg text-[#1a1209] mb-3">Popular Poojas to Book</h2>
-          <p className="text-[#6b5b45] max-w-xl mx-auto">
-            Experience the power of authentic Vedic rituals performed by qualified pandits at sacred temples.
-          </p>
+    <section className="py-16 bg-white">
+      <div className="section-container">
+        {/* Header */}
+        <div className="flex items-end justify-between mb-10">
+          <div>
+            <span className="section-tag mb-3">
+              <Flame size={12} />
+              MOST BOOKED
+            </span>
+            <h2 className="text-3xl font-bold text-gray-900 mt-2">
+              Featured Poojas
+            </h2>
+            <p className="text-gray-500 mt-1 text-sm">
+              Performed by verified pandits at sacred temples across India
+            </p>
+          </div>
+          <Link
+            href="/poojas"
+            className="hidden md:flex items-center gap-1 text-orange-500 font-semibold text-sm hover:gap-2 transition-all"
+          >
+            View all poojas <ArrowRight size={16} />
+          </Link>
         </div>
 
-        {/* ── Category Filters ── */}
-        <div className="flex flex-wrap gap-2 justify-center mb-8">
-          {['All Poojas', 'Ganesh Puja', 'Lakshmi Puja', 'Shiva Puja', 'Navratri Special', 'Griha Pravesh'].map((cat, i) => (
-            <button
-              key={cat}
-              className={`px-4 py-1.5 rounded-full text-sm font-medium transition-all ${
-                i === 0
-                  ? 'bg-[#ff7f0a] text-white shadow-sm'
-                  : 'bg-[#fff8f0] border border-[#f0dcc8] text-[#6b5b45] hover:border-[#ffbd6e] hover:text-[#ff7f0a]'
-              }`}
-            >
-              {cat}
-            </button>
-          ))}
-        </div>
-
-        {/* ── Grid ── */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 mb-8">
-          {poojas.map(pooja => (
-            <Link
-              key={pooja.id}
-              href={`/poojas/${pooja.id}`}
-              className="bg-white border border-[#f0dcc8] rounded-2xl p-5 card-lift group block"
-            >
-              <div className="flex items-start gap-4">
-                {/* Icon */}
-                <div className="w-14 h-14 rounded-xl bg-[#fff8f0] flex items-center justify-center text-2xl flex-shrink-0 group-hover:scale-110 transition-transform">
-                  {pooja.emoji}
-                </div>
-
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center justify-between mb-1">
-                    <h3 className="font-display font-semibold text-[#1a1209] text-base leading-tight group-hover:text-[#ff7f0a] transition-colors truncate">
-                      {pooja.name}
-                    </h3>
-                    <span
-                      className="text-white text-[10px] font-semibold px-2 py-0.5 rounded-full ml-2 flex-shrink-0"
-                      style={{ background: badgeColors[pooja.tag] }}
-                    >
-                      {pooja.tag}
-                    </span>
-                  </div>
-
-                  <p className="text-xs text-[#ff7f0a] font-medium mb-1">🛕 {pooja.temple}</p>
-                  <p className="text-xs text-[#6b5b45] mb-3">✨ {pooja.benefit}</p>
-
-                  <div className="flex items-center gap-3 text-xs text-[#6b5b45] mb-3">
-                    <span className="flex items-center gap-1">
-                      <Clock size={11} className="text-[#b89b7a]" /> {pooja.duration}
-                    </span>
-                    <span className="flex items-center gap-1">
-                      <Star size={11} className="text-[#f0bc00] fill-[#f0bc00]" />
-                      {pooja.rating} ({(pooja.reviews / 1000).toFixed(1)}k)
-                    </span>
-                  </div>
-
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-baseline gap-1.5">
-                      <span className="text-lg font-bold text-[#ff7f0a]">₹{pooja.price.toLocaleString()}</span>
-                      <span className="text-xs text-[#b89b7a] line-through">₹{pooja.originalPrice.toLocaleString()}</span>
-                    </div>
-                    <button className="btn-saffron text-xs py-1.5 px-3">
-                      Book Now
-                    </button>
-                  </div>
+        {/* Grid */}
+        {loading ? (
+          <div className="grid-cards-3">
+            {[...Array(6)].map((_, i) => (
+              <div key={i} className="card">
+                <div className="skeleton h-48 w-full" />
+                <div className="p-4 space-y-3">
+                  <div className="skeleton h-4 w-2/3 rounded" />
+                  <div className="skeleton h-3 w-full rounded" />
+                  <div className="skeleton h-3 w-1/2 rounded" />
+                  <div className="skeleton h-10 w-full rounded-full mt-4" />
                 </div>
               </div>
-            </Link>
-          ))}
-        </div>
+            ))}
+          </div>
+        ) : poojas.length === 0 ? (
+          <div className="text-center py-16 text-gray-400">
+            <p className="text-4xl mb-3">🪔</p>
+            <p className="font-medium">No featured poojas found</p>
+            <p className="text-sm mt-1">Add poojas from the admin panel</p>
+          </div>
+        ) : (
+          <div className="grid-cards-3">
+            {poojas.map((pooja) => (
+              <PoojaCard key={pooja._id} pooja={pooja} />
+            ))}
+          </div>
+        )}
 
-        {/* ── View All ── */}
-        <div className="text-center">
-          <Link href="/poojas" className="btn-outline-saffron text-sm inline-flex">
-            View All Poojas & Rituals
+        {/* Mobile CTA */}
+        <div className="mt-8 text-center md:hidden">
+          <Link href="/poojas" className="btn-outline text-sm px-6 py-2.5">
+            View All Poojas <ArrowRight size={15} />
           </Link>
         </div>
       </div>
     </section>
-  )
+  );
+}
+
+function PoojaCard({ pooja }: { pooja: Pooja }) {
+  return (
+    <div className="card group">
+      {/* Image */}
+      <div className="relative aspect-puja-card bg-orange-50 overflow-hidden">
+        {pooja.images && pooja.images[0] ? (
+          <Image
+            src={pooja.images[0]}
+            alt={pooja.name}
+            fill
+            className="object-cover group-hover:scale-105 transition-transform duration-500"
+          />
+        ) : (
+          <div className="img-placeholder w-full h-full">
+            <div className="img-placeholder-label">
+              <span className="text-5xl">{pooja.emoji || "🪔"}</span>
+            </div>
+          </div>
+        )}
+
+        {/* Tag badge */}
+        {pooja.tag && (
+          <span
+            className={`absolute top-3 left-3 ${pooja.tagColor || "bg-orange-500"} text-white text-[10px] font-bold px-2.5 py-1 rounded-full tracking-wide`}
+          >
+            {pooja.tag}
+          </span>
+        )}
+
+        {/* Temple chip */}
+        {pooja.templeId && (
+          <div className="absolute bottom-3 left-3 bg-black/60 backdrop-blur-sm text-white text-[10px] font-medium px-2.5 py-1 rounded-full">
+            🛕 {pooja.templeId.name}
+          </div>
+        )}
+      </div>
+
+      {/* Content */}
+      <div className="p-4">
+        <div className="flex items-start justify-between gap-2 mb-1">
+          <h3 className="font-bold text-gray-900 text-sm leading-tight line-clamp-2 flex-1">
+            {pooja.name}
+          </h3>
+          <span className="text-orange-500 font-bold text-sm whitespace-nowrap">
+            ₹{pooja.price.toLocaleString("en-IN")}
+          </span>
+        </div>
+
+        <p className="text-gray-500 text-xs line-clamp-2 mb-3">
+          {pooja.description}
+        </p>
+
+        {/* Meta */}
+        <div className="flex items-center gap-3 text-xs text-gray-500 mb-4">
+          <span className="flex items-center gap-1">
+            <Star size={11} className="fill-amber-400 text-amber-400" />
+            <strong className="text-gray-700">{pooja.rating}</strong>(
+            {pooja.totalReviews.toLocaleString("en-IN")})
+          </span>
+          <span className="flex items-center gap-1">
+            <Clock size={11} />
+            {pooja.duration}
+          </span>
+        </div>
+
+        <Link
+          href={`/poojas/${pooja.slug}`}
+          className="btn-primary w-full justify-center text-sm py-2.5"
+        >
+          Book Now
+        </Link>
+      </div>
+    </div>
+  );
 }

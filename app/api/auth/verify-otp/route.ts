@@ -71,9 +71,13 @@ export async function POST(req: Request) {
       path: "/",
     });
 
+    // 8️⃣ Check if user has name (FIX: added this check)
+    const hasName = typeof user.name === "string" && user.name.trim().length > 0;
+
     return NextResponse.json({
       success: true,
       message: "Login successful",
+      hasName, // This tells frontend whether to show name input step
     });
   } catch (error) {
     console.error("verify-otp error:", error);
