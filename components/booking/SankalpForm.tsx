@@ -28,6 +28,8 @@ const INITIAL: SankalpDetails = {
 
 export default function SankalpForm({ onSubmit, submitLabel = 'Continue to Payment' }: SankalpFormProps) {
   const [form, setForm] = useState<SankalpDetails>(INITIAL)
+  const [countryCode, setCountryCode] = useState('91')
+  const [whatsappCountryCode, setWhatsappCountryCode] = useState('91')
   const [errors, setErrors] = useState<Partial<SankalpDetails>>({})
 
   const set = (key: keyof SankalpDetails, value: string | boolean) =>
@@ -40,8 +42,8 @@ export default function SankalpForm({ onSubmit, submitLabel = 'Continue to Payme
 
   const validate = (): boolean => {
     const e: Partial<SankalpDetails> = {}
-    if (!form.name.trim())              e.name    = 'Name is required'
-    if (!isValidMobile(form.phone))     e.phone   = 'Enter a valid 10-digit mobile'
+    if (!form.name.trim()) e.name = 'Name is required'
+    if (!isValidMobile(form.phone)) e.phone = 'Enter a valid 10-digit mobile'
     if (!form.sameAsPhone && !isValidMobile(form.whatsapp)) e.whatsapp = 'Enter a valid WhatsApp number'
     setErrors(e)
     return Object.keys(e).length === 0
@@ -49,7 +51,13 @@ export default function SankalpForm({ onSubmit, submitLabel = 'Continue to Payme
 
   const handleSubmit = (e: FormEvent) => {
     e.preventDefault()
-    if (validate()) onSubmit(form)
+    if (validate()) {
+      onSubmit({
+        ...form,
+        phone: `${countryCode}${form.phone}`,
+        whatsapp: `${form.sameAsPhone ? countryCode : whatsappCountryCode}${form.whatsapp}`
+      })
+    }
   }
 
   const field = (key: keyof SankalpDetails, label: string, extra?: React.InputHTMLAttributes<HTMLInputElement>, required = false) => (
@@ -99,7 +107,17 @@ export default function SankalpForm({ onSubmit, submitLabel = 'Continue to Payme
               Mobile Number <span className="text-[#ff7f0a]">*</span>
             </label>
             <div className="flex">
-              <span className="flex items-center px-3 border border-r-0 border-[#f0dcc8] rounded-l-xl text-sm text-[#6b5b45] bg-[#fdf6ee]">+91</span>
+              <select
+                value={countryCode}
+                onChange={e => {
+                  setCountryCode(e.target.value)
+                  if (form.sameAsPhone) setWhatsappCountryCode(e.target.value)
+                }}
+                className="px-2 border border-r-0 border-[#f0dcc8] rounded-l-xl text-xs text-[#6b5b45] bg-[#fdf6ee] outline-none"
+              >
+                <option value="91">+91 (IN)</option>
+                <option value="977">+977 (NP)</option>
+              </select>
               <input
                 type="tel"
                 value={form.phone}
@@ -117,7 +135,15 @@ export default function SankalpForm({ onSubmit, submitLabel = 'Continue to Payme
               WhatsApp Number <span className="text-[#25D366] font-normal normal-case">(video sent here)</span> <span className="text-[#ff7f0a]">*</span>
             </label>
             <div className="flex">
-              <span className="flex items-center px-3 border border-r-0 border-[#f0dcc8] rounded-l-xl text-sm text-[#6b5b45] bg-[#fdf6ee]">+91</span>
+              <select
+                value={form.sameAsPhone ? countryCode : whatsappCountryCode}
+                disabled={form.sameAsPhone}
+                onChange={e => setWhatsappCountryCode(e.target.value)}
+                className="px-2 border border-r-0 border-[#f0dcc8] rounded-l-xl text-xs text-[#6b5b45] bg-[#fdf6ee] outline-none disabled:opacity-70"
+              >
+                <option value="91">+91</option>
+                <option value="977">+977</option>
+              </select>
               <input
                 type="tel"
                 value={form.whatsapp}

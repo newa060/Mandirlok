@@ -8,6 +8,8 @@ import Chadhava from "../../models/Chadhava";
 import Pandit from "../../models/Pandit";
 import Order from "../../models/Order";
 import User from "../../models/User";
+import Settings from "../../models/Settings";
+import { sendWhatsApp } from "../whatsapp";
 
 // =======================
 // DASHBOARD STATS
@@ -104,6 +106,10 @@ export async function createPooja(data: any) {
     try {
         await connectDB();
         const pooja = await Pooja.create(data);
+        // Sync Temple pujasAvailable count
+        if (data.templeId) {
+            await Temple.findByIdAndUpdate(data.templeId, { $inc: { pujasAvailable: 1 } });
+        }
         revalidatePath("/admin/poojas");
         return { success: true, pooja: JSON.parse(JSON.stringify(pooja)) };
     } catch (error: any) {
@@ -126,7 +132,12 @@ export async function updatePooja(id: string, data: any) {
 export async function deletePooja(id: string) {
     try {
         await connectDB();
-        await Pooja.findByIdAndDelete(id);
+        const pooja = await Pooja.findById(id);
+        if (pooja) {
+            await Pooja.findByIdAndDelete(id);
+            // Sync Temple pujasAvailable count
+            await Temple.findByIdAndUpdate(pooja.templeId, { $inc: { pujasAvailable: -1 } });
+        }
         revalidatePath("/admin/poojas");
         revalidatePath("/poojas");
         return { success: true };
@@ -266,7 +277,7 @@ export async function getOrderById(id: string) {
 export async function updateOrderStatus(id: string, status: string) {
     try {
         await connectDB();
-        const order = await Order.findByIdAndUpdate(id, { orderStatus: status }, { new: true });
+        const order = await Order.findByIdAndUpdate(id, { orderStatus: status }, { returnDocument: 'after' });
         revalidatePath("/admin/orders");
         revalidatePath("/admin");
         return { success: true, order: JSON.parse(JSON.stringify(order)) };
@@ -281,8 +292,20 @@ export async function assignPanditToOrder(orderId: string, panditId: string) {
         const order = await Order.findByIdAndUpdate(
             orderId,
             { panditId, orderStatus: "confirmed" },
-            { new: true }
-        );
+            { returnDocument: 'after' }
+        ).populate("panditId", "name").populate("poojaId", "name");
+
+        if (order) {
+            try {
+                await sendWhatsApp(
+                    order.whatsapp,
+                    `🙏 *Jai Shri Ram!*\n\n*Update:* A Pandit has been assigned for your pooja.\n\n📿 *Pooja:* ${(order.poojaId as any)?.name}\n🧘 *Pandit:* ${(order.panditId as any)?.name}\n📋 *Booking ID:* ${order.bookingId}\n\nYou will receive another update when the pooja starts.\n\n🛕 *Mandirlok — Divine Blessings Delivered*`
+                );
+            } catch (e) {
+                console.error("[WhatsApp pandit assigned notification failed]", e);
+            }
+        }
+
         revalidatePath("/admin/orders");
         return { success: true, order: JSON.parse(JSON.stringify(order)) };
     } catch (error: any) {
@@ -296,10 +319,46 @@ export async function updateOrderVideo(orderId: string, videoUrl: string) {
         const order = await Order.findByIdAndUpdate(
             orderId,
             { videoUrl, videoSentAt: new Date(), orderStatus: "completed" },
-            { new: true }
-        );
+            { returnDocument: 'after' }
+        ).populate("poojaId", "name");
+
+        if (order) {
+            try {
+                await sendWhatsApp(
+                    order.whatsapp,
+                    `🙏 *Jai Shri Ram!*\n\n*Update:* Your pooja has been successfully completed.\n\n📿 *Pooja:* ${(order.poojaId as any)?.name}\n📋 *Booking ID:* ${order.bookingId}\n📹 *Video Link:* ${videoUrl}\n\nMay the deities bless you and your family.\n\n🛕 *Mandirlok — Divine Blessings Delivered*`
+                );
+            } catch (e) {
+                console.error("[WhatsApp pooja completed notification failed]", e);
+            }
+        }
+
         revalidatePath("/admin/orders");
         return { success: true, order: JSON.parse(JSON.stringify(order)) };
+    } catch (error: any) {
+        return { success: false, error: error.message };
+    }
+}
+
+// =======================
+// SETTINGS MANAGEMENT
+// =======================
+export async function getSettings(key: string) {
+    await connectDB();
+    const setting = await Settings.findOne({ key }).lean();
+    return setting ? JSON.parse(JSON.stringify(setting)) : null;
+}
+
+export async function updateSettings(key: string, value: any, description?: string) {
+    try {
+        await connectDB();
+        const setting = await Settings.findOneAndUpdate(
+            { key },
+            { value, description },
+            { new: true, upsert: true }
+        );
+        revalidatePath("/"); // Revalidate landing page
+        return { success: true, setting: JSON.parse(JSON.stringify(setting)) };
     } catch (error: any) {
         return { success: false, error: error.message };
     }

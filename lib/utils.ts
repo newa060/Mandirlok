@@ -53,10 +53,11 @@ export function discountPercent(original: number, discounted: number): number {
 }
 
 /**
- * Validate Indian mobile number
+ * Validate mobile number (India: 10 digits starting 6-9, Nepal: 10 digits starting 97/98)
  */
 export function isValidMobile(phone: string): boolean {
-  return /^[6-9]\d{9}$/.test(phone)
+  // Broad 10-digit validation to support both IN and NP
+  return /^[6-9]\d{9}$/.test(phone) || /^9[78]\d{8}$/.test(phone);
 }
 
 /**

@@ -32,8 +32,8 @@ export async function GET(
 
         const order = await Order.findById(params.id)
             .populate("poojaId", "name emoji duration")
-            .populate("templeId", "name location");
-        // Note: panditId is skipped — no Pandit model registered yet
+            .populate("templeId", "name location")
+            .populate("panditId", "name phone whatsapp photo");
 
         if (!order) {
             return NextResponse.json(

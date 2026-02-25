@@ -39,6 +39,7 @@ interface UserProfile {
   name: string;
   email: string;
   phone?: string;
+  photo?: string;
 }
 
 // ── Status Config ─────────────────────────────────────────────────────────────
@@ -77,6 +78,10 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [activeTab, setActiveTab] = useState<"all" | "upcoming" | "completed">("all");
+  const [dashSettings, setDashSettings] = useState({
+    bannerUrl: "",
+    welcomeMessage: "Welcome to your Divine Journey"
+  });
 
   // Fetch orders and profile
   useEffect(() => {
@@ -84,16 +89,21 @@ export default function DashboardPage() {
       setLoading(true);
       setError("");
       try {
-        const [ordersRes, profileRes] = await Promise.all([
+        const [ordersRes, profileRes, settingsRes] = await Promise.all([
           fetch("/api/orders/mine"),
           fetch("/api/auth/me"),
+          fetch("/api/settings/dashboard_settings")
         ]);
 
-        const ordersData = await ordersRes.json();
-        const profileData = await profileRes.json();
+        const [ordersData, profileData, settingsData] = await Promise.all([
+          ordersRes.json(),
+          profileRes.json(),
+          settingsRes.json()
+        ]);
 
         if (ordersData.success) setOrders(ordersData.data);
         if (profileData.success) setProfile(profileData.data);
+        if (settingsData.success && settingsData.data) setDashSettings(settingsData.data);
 
         if (!ordersData.success) setError("Failed to load bookings.");
       } catch {
@@ -137,9 +147,17 @@ export default function DashboardPage() {
               <div className="bg-white border border-[#f0dcc8] rounded-2xl p-5 shadow-card">
                 {/* Profile */}
                 <div className="text-center mb-5 pb-5 border-b border-[#f0dcc8]">
-                  <div className="w-16 h-16 rounded-full bg-gradient-to-br from-[#ff7f0a] to-[#8b0000] text-white font-display font-bold text-2xl flex items-center justify-center mx-auto mb-3">
-                    {profile?.name ? profile.name.charAt(0).toUpperCase() : "🙏"}
-                  </div>
+                  {profile?.photo ? (
+                    <img
+                      src={profile.photo}
+                      alt={profile.name}
+                      className="w-16 h-16 rounded-full object-cover mx-auto mb-3 border-2 border-[#ff7f0a]"
+                    />
+                  ) : (
+                    <div className="w-16 h-16 rounded-full bg-gradient-to-br from-[#ff7f0a] to-[#8b0000] text-white font-display font-bold text-2xl flex items-center justify-center mx-auto mb-3">
+                      {profile?.name ? profile.name.charAt(0).toUpperCase() : "🙏"}
+                    </div>
+                  )}
                   <h2 className="font-display font-semibold text-[#1a1209]">
                     {profile?.name || "Devotee"}
                   </h2>
@@ -189,6 +207,25 @@ export default function DashboardPage() {
 
             {/* ── Main Content ── */}
             <div className="lg:col-span-3 space-y-5">
+              
+              {/* Dynamic Banner */}
+              <div className="relative h-40 md:h-48 rounded-3xl overflow-hidden shadow-card border border-[#f0dcc8]">
+                <img 
+                  src={dashSettings.bannerUrl || "https://images.unsplash.com/photo-1542273917363-3b1817f69a2d?q=80&w=2074&auto=format&fit=crop"} 
+                  className="w-full h-full object-cover" 
+                  alt="Dashboard Banner" 
+                />
+                <div className="absolute inset-0 bg-gradient-to-r from-black/60 to-transparent flex items-center px-8">
+                  <div className="max-w-md">
+                    <h1 className="text-2xl md:text-3xl font-display font-bold text-white mb-2">
+                       {dashSettings.welcomeMessage}
+                    </h1>
+                    <p className="text-orange-200 text-sm font-medium">
+                      Manage your spiritual journey and pooja bookings in one place.
+                    </p>
+                  </div>
+                </div>
+              </div>
 
               {/* Stats Row */}
               <div className="grid grid-cols-3 gap-4">

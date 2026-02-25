@@ -1,11 +1,12 @@
 import { NextResponse } from "next/server";
 import crypto from "crypto";
 import { cookies } from "next/headers";
-import jwt from "jsonwebtoken";
+import { verifyToken } from "@/lib/jwt";
 import { connectDB } from "@/lib/db";
 import Order from "@/models/Order";
 import Pooja from "@/models/Pooja";
 import Chadhava from "@/models/Chadhava";
+import { sendWhatsApp } from "@/lib/whatsapp";
 
 export async function POST(req: Request) {
   try {
@@ -20,10 +21,8 @@ export async function POST(req: Request) {
       );
     }
 
-    let decoded: { userId: string };
-    try {
-      decoded = jwt.verify(token, process.env.JWT_SECRET!) as { userId: string };
-    } catch {
+    const decoded = verifyToken(token);
+    if (!decoded) {
       return NextResponse.json(
         { success: false, message: "Invalid token" },
         { status: 401 }
@@ -32,19 +31,14 @@ export async function POST(req: Request) {
 
     const body = await req.json();
     const {
-      // Razorpay payment details
       razorpayOrderId,
       razorpayPaymentId,
       razorpaySignature,
-
-      // Booking details
       poojaId,
       templeId,
       bookingDate,
       qty = 1,
       chadhavaIds = [],
-
-      // Sankalp details
       sankalpName,
       gotra,
       dob,
@@ -118,6 +112,16 @@ export async function POST(req: Request) {
       razorpaySignature,
       orderStatus: "pending",
     });
+
+    // 5. Send WhatsApp confirmation
+    try {
+      await sendWhatsApp(
+        whatsapp,
+        `🙏 *Jai Shri Ram!*\n\nYour booking is confirmed on *Mandirlok*.\n\n📋 *Booking ID:* ${order.bookingId}\n📿 *Pooja:* ${pooja.name}\n📅 *Date:* ${new Date(bookingDate).toLocaleDateString("en-IN", { day: "numeric", month: "long", year: "numeric" })}\n💰 *Amount Paid:* ₹${totalAmount}\n\nA pandit will be assigned shortly. You will receive another WhatsApp update.\n\n🛕 *Mandirlok — Divine Blessings Delivered*`
+      );
+    } catch (e) {
+      console.error("[WhatsApp booking confirmation failed]", e);
+    }
 
     return NextResponse.json({
       success: true,

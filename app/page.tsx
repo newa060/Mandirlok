@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
+import { getSettings } from "@/lib/actions/admin";
 
 // ── Temple Images (real Wikimedia Commons photos) ────────────────────────────
 const SLIDE_IMAGES = [
@@ -397,19 +398,31 @@ function HeroSection() {
     }, 800);
   };
 
-  const next = () => goTo((current + 1) % SLIDE_IMAGES.length, "left");
+  const [heroSlides, setHeroSlides] = useState(SLIDE_IMAGES);
+
+  useEffect(() => {
+    async function fetchSlides() {
+      const res = await getSettings("landing_page_slides");
+      if (res && res.value && res.value.length > 0) {
+        setHeroSlides(res.value);
+      }
+    }
+    fetchSlides();
+  }, []);
+
+  const next = () => goTo((current + 1) % heroSlides.length, "left");
   const prev = () =>
-    goTo((current - 1 + SLIDE_IMAGES.length) % SLIDE_IMAGES.length, "right");
+    goTo((current - 1 + heroSlides.length) % heroSlides.length, "right");
 
   useEffect(() => {
     timeoutRef.current = setTimeout(next, 5000);
     return () => {
       if (timeoutRef.current) clearTimeout(timeoutRef.current);
     };
-  }, [current, animating]);
+  }, [current, animating, heroSlides]);
 
-  const slide = SLIDE_IMAGES[current];
-  const nextSlide = SLIDE_IMAGES[nextIndex];
+  const slide = heroSlides[current];
+  const nextSlide = heroSlides[nextIndex];
 
   return (
     <section className="relative w-full h-[560px] md:h-[640px] overflow-hidden bg-[#1a0500]">
@@ -541,7 +554,7 @@ function HeroSection() {
         className="absolute bottom-6 left-1/2 -translate-x-1/2 flex gap-2"
         style={{ zIndex: 20 }}
       >
-        {SLIDE_IMAGES.map((_, i) => (
+        {heroSlides.map((_, i) => (
           <button
             key={i}
             onClick={() => goTo(i, i > current ? "left" : "right")}

@@ -52,6 +52,9 @@ function CartContent() {
     whatsapp: "",
     address: "",
   });
+  const [countryCode, setCountryCode] = useState("91");
+  const [whatsappCountryCode, setWhatsappCountryCode] = useState("91");
+  const [sameAsPhone, setSameAsPhone] = useState(true);
   const [step, setStep] = useState<1 | 2>(1);
   const [paying, setPaying] = useState(false);
   const [payError, setPayError] = useState("");
@@ -150,8 +153,8 @@ function CartContent() {
                   sankalpName: form.name,
                   gotra: form.gotra,
                   dob: form.dob,
-                  phone: form.phone,
-                  whatsapp: form.whatsapp,
+                  phone: `${countryCode}${form.phone}`,
+                  whatsapp: `${sameAsPhone ? countryCode : whatsappCountryCode}${form.whatsapp}`,
                   sankalp: form.sankalp,
                   address: form.address,
                 }),
@@ -249,19 +252,70 @@ function CartContent() {
                   </div>
                   <div>
                     <label className="block text-xs font-semibold text-[#6b5b45] mb-1.5 uppercase tracking-wide">Mobile Number *</label>
-                    <div className="relative">
-                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[#6b5b45] text-sm">+91</span>
-                      <input name="phone" value={form.phone} onChange={handleChange} placeholder="10-digit mobile" className="input-divine pl-12" maxLength={10} />
+                    <div className="flex">
+                      <select
+                        value={countryCode}
+                        onChange={(e) => {
+                          setCountryCode(e.target.value);
+                          if (sameAsPhone) setWhatsappCountryCode(e.target.value);
+                        }}
+                        className="px-2 border border-r-0 border-[#f0dcc8] rounded-l-xl text-xs text-[#6b5b45] bg-[#fdf6ee] outline-none"
+                      >
+                        <option value="91">+91 (IN)</option>
+                        <option value="977">+977 (NP)</option>
+                      </select>
+                      <input
+                        name="phone"
+                        value={form.phone}
+                        onChange={(e) => {
+                          const val = e.target.value.replace(/\D/g, '').slice(0, 10);
+                          setForm(f => ({ ...f, phone: val, whatsapp: sameAsPhone ? val : f.whatsapp }));
+                        }}
+                        placeholder="10-digit mobile"
+                        className="flex-1 border border-[#f0dcc8] rounded-r-xl px-3 py-2 text-sm outline-none focus:border-[#ff7f0a]"
+                        maxLength={10}
+                      />
                     </div>
                   </div>
                   <div>
                     <label className="block text-xs font-semibold text-[#6b5b45] mb-1.5 uppercase tracking-wide">
                       WhatsApp Number * <span className="text-[#25D366]">(Video will be sent here)</span>
                     </label>
-                    <div className="relative">
-                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[#6b5b45] text-sm">+91</span>
-                      <input name="whatsapp" value={form.whatsapp} onChange={handleChange} placeholder="WhatsApp number" className="input-divine pl-12" maxLength={10} />
+                    <div className="flex">
+                      <select
+                        value={sameAsPhone ? countryCode : whatsappCountryCode}
+                        disabled={sameAsPhone}
+                        onChange={(e) => setWhatsappCountryCode(e.target.value)}
+                        className="px-2 border border-r-0 border-[#f0dcc8] rounded-l-xl text-xs text-[#6b5b45] bg-[#fdf6ee] outline-none disabled:opacity-70"
+                      >
+                        <option value="91">+91</option>
+                        <option value="977">+977</option>
+                      </select>
+                      <input
+                        name="whatsapp"
+                        value={form.whatsapp}
+                        disabled={sameAsPhone}
+                        onChange={(e) => setForm(f => ({ ...f, whatsapp: e.target.value.replace(/\D/g, '').slice(0, 10) }))}
+                        placeholder="WhatsApp number"
+                        className="flex-1 border border-[#f0dcc8] rounded-r-xl px-3 py-2 text-sm outline-none focus:border-[#ff7f0a] disabled:bg-[#fdf6ee]"
+                        maxLength={10}
+                      />
                     </div>
+                    <label className="flex items-center gap-2 mt-2 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={sameAsPhone}
+                        onChange={(e) => {
+                          setSameAsPhone(e.target.checked);
+                          if (e.target.checked) {
+                            setForm(f => ({ ...f, whatsapp: f.phone }));
+                            setWhatsappCountryCode(countryCode);
+                          }
+                        }}
+                        className="accent-[#ff7f0a]"
+                      />
+                      <span className="text-[10px] text-[#6b5b45]">Same as mobile number</span>
+                    </label>
                     <p className="text-[10px] text-[#25D366] mt-1">💬 Pooja video & updates will be sent to this WhatsApp</p>
                   </div>
                   <div className="sm:col-span-2">
@@ -297,8 +351,8 @@ function CartContent() {
                   <div className="grid grid-cols-2 gap-2 text-xs text-[#6b5b45]">
                     <span>Name: <strong className="text-[#1a1209]">{form.name}</strong></span>
                     <span>Gotra: <strong className="text-[#1a1209]">{form.gotra || "—"}</strong></span>
-                    <span>Mobile: <strong className="text-[#1a1209]">+91 {form.phone}</strong></span>
-                    <span>WhatsApp: <strong className="text-[#1a1209]">+91 {form.whatsapp}</strong></span>
+                    <span>Mobile: <strong className="text-[#1a1209]">+{countryCode} {form.phone}</strong></span>
+                    <span>WhatsApp: <strong className="text-[#1a1209]">+{sameAsPhone ? countryCode : whatsappCountryCode} {form.whatsapp}</strong></span>
                   </div>
                 </div>
                 {payError && (

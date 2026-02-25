@@ -87,7 +87,7 @@ function BookingSuccessContent() {
     if (navigator.share) {
       try {
         await navigator.share({ title: "My Pooja Booking", text });
-      } catch {}
+      } catch { }
     } else {
       navigator.clipboard.writeText(text);
       alert("Booking details copied to clipboard!");
@@ -184,11 +184,11 @@ function BookingSuccessContent() {
         </div>
         <div class="row">
           <span class="key">Phone</span>
-          <span class="val">${order.phone}</span>
+          <span class="val">+${order.phone}</span>
         </div>
         <div class="row">
           <span class="key">WhatsApp</span>
-          <span class="val">${order.whatsapp}</span>
+          <span class="val">+${order.whatsapp}</span>
         </div>
         ${order.sankalp ? `<div class="row"><span class="key">Sankalp</span><span class="val" style="max-width:260px">${order.sankalp}</span></div>` : ""}
         <div class="row">
@@ -197,9 +197,8 @@ function BookingSuccessContent() {
         </div>
       </div>
 
-      ${
-        order.chadhavaItems?.length > 0
-          ? `
+      ${order.chadhavaItems?.length > 0
+        ? `
       <div class="section">
         <div class="section-title">Chadhava Items</div>
         ${order.chadhavaItems
@@ -214,7 +213,7 @@ function BookingSuccessContent() {
           )
           .join("")}
       </div>`
-          : ""
+        : ""
       }
 
       <div class="section">
@@ -223,15 +222,14 @@ function BookingSuccessContent() {
           <span style="color:#6b7280">Pooja Amount</span>
           <span>₹${order.poojaAmount.toLocaleString("en-IN")}</span>
         </div>
-        ${
-          order.chadhavaAmount > 0
-            ? `
+        ${order.chadhavaAmount > 0
+        ? `
         <div class="price-row">
           <span style="color:#6b7280">Chadhava Amount</span>
           <span>₹${order.chadhavaAmount.toLocaleString("en-IN")}</span>
         </div>`
-            : ""
-        }
+        : ""
+      }
         <div class="total-row">
           <span>Total Paid</span>
           <span>₹${order.totalAmount.toLocaleString("en-IN")}</span>
@@ -242,7 +240,7 @@ function BookingSuccessContent() {
       </div>
 
       <div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:10px;padding:14px 16px;font-size:13px;color:#1e40af;line-height:1.7">
-        📱 <strong>Next steps:</strong> Your pandit will be assigned shortly. You will receive pooja video and confirmation on your WhatsApp number <strong>${order.whatsapp}</strong> after the pooja is completed.
+        📱 <strong>Next steps:</strong> Your pandit will be assigned shortly. You will receive pooja video and confirmation on your WhatsApp number <strong>+${order.whatsapp}</strong> after the pooja is completed.
       </div>
 
     </div>
@@ -376,7 +374,7 @@ function BookingSuccessContent() {
                 {
                   icon: <Phone size={13} className="text-orange-400" />,
                   label: "WhatsApp",
-                  value: order.whatsapp,
+                  value: `+${order.whatsapp}`,
                 },
                 {
                   icon: <span className="text-orange-400 text-xs">🕉️</span>,
@@ -458,7 +456,7 @@ function BookingSuccessContent() {
           <strong>📱 What happens next?</strong>
           <ul className="mt-1.5 space-y-1 text-xs leading-relaxed list-disc list-inside text-blue-600">
             <li>A pandit will be assigned to your pooja</li>
-            <li>You'll receive a WhatsApp update at {order.whatsapp}</li>
+            <li>You'll receive a WhatsApp update at +{order.whatsapp}</li>
             <li>Pooja video will be sent after completion</li>
           </ul>
         </div>

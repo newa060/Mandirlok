@@ -4,6 +4,7 @@ export interface IChadhava extends Document {
   name: string;
   templeId: Types.ObjectId;
   emoji: string;
+  image?: string;
   price: number;
   description: string;
   isActive: boolean;
@@ -16,6 +17,7 @@ const ChadhavaSchema = new Schema<IChadhava>(
     name: { type: String, required: true, trim: true },
     templeId: { type: Schema.Types.ObjectId, ref: "Temple", required: true },
     emoji: { type: String, default: "🌸" },
+    image: { type: String, default: "" },
     price: { type: Number, required: true, min: 0 },
     description: { type: String, default: "" },
     isActive: { type: Boolean, default: true },

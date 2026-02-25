@@ -213,11 +213,11 @@ export default function BookingDetailsPage({ params }: { params: { id: string } 
                                             <div className="space-y-2 text-sm">
                                                 <div className="flex items-center justify-between">
                                                     <span className="flex items-center gap-1.5 text-[#6b5b45]"><Phone size={14} /> Mobile</span>
-                                                    <span className="font-medium text-[#1a1209]">+91 {order.phone}</span>
+                                                    <span className="font-medium text-[#1a1209]">{order.phone.startsWith('91') || order.phone.startsWith('977') ? '+' : '+91 '}{order.phone}</span>
                                                 </div>
                                                 <div className="flex items-center justify-between">
                                                     <span className="flex items-center gap-1.5 text-[#6b5b45]"><MessageCircle size={14} className="text-[#25D366]" /> WhatsApp</span>
-                                                    <span className="font-medium text-[#1a1209]">+91 {order.whatsapp}</span>
+                                                    <span className="font-medium text-[#1a1209]">{order.whatsapp.startsWith('91') || order.whatsapp.startsWith('977') ? '+' : '+91 '}{order.whatsapp}</span>
                                                 </div>
                                             </div>
                                         </div>
