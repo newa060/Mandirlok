@@ -41,9 +41,12 @@ function ChadhavaCard({ item }: { item: Chadhava }) {
             className="absolute inset-0 w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
           />
         ) : (
-          <span className="text-6xl group-hover:scale-110 transition-transform duration-500 relative z-10 drop-shadow-lg">
-            {item.emoji || "🌸"}
-          </span>
+          <div className="flex flex-col items-center text-white/40 gap-2">
+            <svg className="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+            </svg>
+            <span className="text-[10px] font-bold uppercase tracking-wider">No Image Available</span>
+          </div>
         )}
         {/* Temple badge */}
         {item.templeId?.name && (
@@ -92,8 +95,11 @@ function ChadhavaCard({ item }: { item: Chadhava }) {
         <div className="flex items-center justify-end pt-3 border-t border-gray-100 mt-auto">
           <button
             onClick={() => {
-              // Direct to cart/booking — extend as needed
-              window.location.href = `/chadhava/${item._id}`;
+              if (item.templeId?._id) {
+                window.location.href = `/temples/${item.templeId._id}`;
+              } else {
+                window.location.href = "/temples";
+              }
             }}
             className="inline-flex items-center gap-1.5 bg-amber-500 hover:bg-amber-600 text-white text-sm font-bold px-4 py-2.5 rounded-full transition-all duration-200 hover:shadow-lg hover:shadow-amber-200"
           >
@@ -170,22 +176,22 @@ function PageBanner() {
 function HowItWorksBanner() {
   const steps = [
     {
-      icon: "🛕",
+      icon: <svg className="w-5 h-5 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" /></svg>,
       title: "Choose Temple",
       desc: "Select from 500+ sacred temples across India",
     },
     {
-      icon: "🌸",
+      icon: <svg className="w-5 h-5 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" /></svg>,
       title: "Pick Chadhava",
       desc: "Choose flowers, fruits, sweets or any sacred item",
     },
     {
-      icon: "💳",
+      icon: <svg className="w-5 h-5 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" /></svg>,
       title: "Secure Payment",
       desc: "Pay securely via UPI, card or net banking",
     },
     {
-      icon: "📹",
+      icon: <svg className="w-5 h-5 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg>,
       title: "Receive Video",
       desc: "Get video proof of your offering within 24–48 hrs",
     },
@@ -341,7 +347,13 @@ export default function ChadhavaPage() {
           {/* Empty State */}
           {!loading && !error && items.length === 0 && (
             <div className="text-center py-20">
-              <div className="text-6xl mb-4">🌸</div>
+              <div className="flex justify-center mb-6">
+                <div className="w-20 h-20 bg-amber-50 rounded-full flex items-center justify-center">
+                  <svg className="w-10 h-10 text-amber-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                  </svg>
+                </div>
+              </div>
               <h3 className="text-xl font-bold text-gray-700 mb-2">
                 No offerings found
               </h3>

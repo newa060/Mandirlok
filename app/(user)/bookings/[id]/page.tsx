@@ -5,7 +5,9 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import Navbar from '@/components/layout/Navbar'
 import Footer from '@/components/layout/Footer'
-import { ChevronRight, ArrowLeft, Loader2, Calendar, Clock, MapPin, Phone, MessageCircle, FileText, Download, Share2, Video } from 'lucide-react'
+import { ChevronRight, ArrowLeft, Loader2, Calendar, Clock, MapPin, Phone, MessageCircle, FileText, Download, Share2, Video, Star } from 'lucide-react'
+import ReviewForm from '@/components/booking/ReviewForm'
+import { getReviewByOrder } from '@/lib/actions/reviews'
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 interface OrderData {
@@ -55,6 +57,8 @@ export default function BookingDetailsPage({ params }: { params: { id: string } 
     const orderId = params.id
 
     const [order, setOrder] = useState<OrderData | null>(null)
+    const [review, setReview] = useState<any>(null)
+    const [user, setUser] = useState<any>(null)
     const [loading, setLoading] = useState(true)
     const [error, setError] = useState('')
 
@@ -65,17 +69,36 @@ export default function BookingDetailsPage({ params }: { params: { id: string } 
             return
         }
 
-        fetch(`/api/orders/${orderId}`)
-            .then(res => res.json())
-            .then(data => {
-                if (data.success) {
-                    setOrder(data.data)
-                } else {
-                    setError(data.message || 'Could not load booking details.')
-                }
-            })
-            .catch(() => setError('Failed to load booking details. Please try again.'))
-            .finally(() => setLoading(false))
+        const loadData = async () => {
+          try {
+            const [orderRes, userRes] = await Promise.all([
+              fetch(`/api/orders/${orderId}`),
+              fetch(`/api/auth/me`)
+            ]);
+
+            const orderData = await orderRes.json();
+            const userData = await userRes.json();
+
+            if (orderData.success) {
+              setOrder(orderData.data);
+              // Fetch review for this order
+              const reviewData = await getReviewByOrder(orderId);
+              setReview(reviewData);
+            } else {
+              setError(orderData.message || 'Could not load booking details.');
+            }
+
+            if (userData.success) {
+              setUser(userData.data);
+            }
+          } catch (err) {
+            setError('Failed to load booking details. Please try again.');
+          } finally {
+            setLoading(false);
+          }
+        };
+
+        loadData();
     }, [orderId])
 
     return (
@@ -259,6 +282,20 @@ export default function BookingDetailsPage({ params }: { params: { id: string } 
                                 </div>
 
                             </div>
+
+                            {/* Review Section */}
+                            {order.orderStatus === 'completed' && user && (
+                              <section id="review-section" className="mt-8 border-t border-[#f0dcc8] pt-8">
+                                <ReviewForm 
+                                  orderId={order._id}
+                                  userId={user._id}
+                                  poojaId={order.poojaId._id}
+                                  templeId={order.templeId._id}
+                                  poojaName={order.poojaId.name}
+                                  existingReview={review}
+                                />
+                              </section>
+                            )}
 
                         </div>
                     )}

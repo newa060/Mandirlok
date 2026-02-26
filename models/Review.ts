@@ -8,6 +8,8 @@ export interface IReview extends Document {
   panditId?: Types.ObjectId;
   rating: number;
   comment: string;
+  isApproved: boolean;
+  isFeatured: boolean;
   createdAt: Date;
 }
 
@@ -20,6 +22,8 @@ const ReviewSchema = new Schema<IReview>(
     panditId: { type: Schema.Types.ObjectId, ref: "Pandit", default: null },
     rating: { type: Number, required: true, min: 1, max: 5 },
     comment: { type: String, default: "", maxlength: 500 },
+    isApproved: { type: Boolean, default: false },
+    isFeatured: { type: Boolean, default: false },
   },
   { timestamps: true }
 );

@@ -12,6 +12,20 @@ const nextConfig = {
       "i.imgur.com",
     ],
   },
+  async redirects() {
+    return [
+      {
+        source: "/booking",
+        destination: "/dashboard",
+        permanent: true,
+      },
+      {
+        source: "/bookings",
+        destination: "/dashboard",
+        permanent: true,
+      },
+    ];
+  },
 };
 
 module.exports = nextConfig;

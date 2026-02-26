@@ -5,6 +5,7 @@ import Link from "next/link";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import { getSettings } from "@/lib/actions/admin";
+import { getHomepageReviews } from "@/lib/actions/reviews";
 
 // ── Temple Images (real Wikimedia Commons photos) ────────────────────────────
 const SLIDE_IMAGES = [
@@ -199,40 +200,14 @@ const FEATURES = [
   },
 ];
 
-const TESTIMONIALS = [
-  {
-    name: "Priya Sharma",
-    city: "Delhi",
-    text: "I participated in a Rudrabhishek at Mahakaleshwar for my father's health. The video was so moving. Our family felt truly connected to the divine.",
-    stars: 5,
-    initials: "PS",
-    color: "bg-orange-500",
-  },
-  {
-    name: "Ramesh Nair",
-    city: "Bangalore",
-    text: "The entire experience was seamless. From participation to receiving the video, everything was professional. Will definitely participate again!",
-    stars: 5,
-    initials: "RN",
-    color: "bg-rose-500",
-  },
-  {
-    name: "Meena Gupta",
-    city: "Mumbai",
-    text: "My son lives abroad and participated in a puja at Tirupati for me. I received the video and felt Swami's blessings directly. Wonderful service.",
-    stars: 5,
-    initials: "MG",
-    color: "bg-amber-500",
-  },
-  {
-    name: "Suresh Rao",
-    city: "Chennai",
-    text: "Very authentic and transparent. I could see the pandit take my name in the sankalp. This is exactly what I needed.",
-    stars: 5,
-    initials: "SR",
-    color: "bg-teal-500",
-  },
-];
+interface RealReview {
+  _id: string;
+  userId: { name: string; photo?: string };
+  templeId: { name: string; location: string };
+  rating: number;
+  comment: string;
+  createdAt: string;
+}
 
 // ── Star Rating ──────────────────────────────────────────────────────────────
 function Stars({ count = 5 }: { count?: number }) {
@@ -790,41 +765,75 @@ function FeaturesSection() {
 
 // ── Testimonials ──────────────────────────────────────────────────────────────
 function TestimonialsSection() {
-  const [active, setActive] = useState(0);
+  const [reviews, setReviews] = useState<RealReview[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    async function fetchReviews() {
+      const res = await getHomepageReviews();
+      if (res.success) {
+        setReviews(res.data);
+      }
+      setLoading(false);
+    }
+    fetchReviews();
+  }, []);
+
+  if (!loading && reviews.length === 0) return null;
+
   return (
-    <section className="py-16 bg-gray-50">
+    <section className="py-16 bg-gray-50 overflow-hidden">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <SectionHeader
           tag="Reviews"
           title="What Our Devotees Say"
           subtitle="Thousands of devotees trust Mandirlok to connect them with divine blessings from India's sacred temples."
         />
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          {TESTIMONIALS.map((t, i) => (
-            <div
-              key={i}
-              className={`bg-white rounded-2xl p-6 shadow-sm hover:shadow-md transition-all duration-300 border-2 cursor-pointer ${active === i ? "border-orange-300 shadow-orange-100" : "border-transparent"}`}
-              onClick={() => setActive(i)}
-            >
-              <Stars count={t.stars} />
-              <p className="text-gray-600 text-sm leading-relaxed mt-3 mb-4 line-clamp-4">
-                "{t.text}"
-              </p>
-              <div className="flex items-center gap-3">
-                <div
-                  className={`w-10 h-10 rounded-full ${t.color} flex items-center justify-center text-white font-bold text-sm`}
-                >
-                  {t.initials}
+        
+        <div className="relative">
+          <div className="flex flex-wrap justify-center gap-6">
+            {loading ? (
+              // Loading skeletons
+              Array.from({ length: 3 }).map((_, i) => (
+                <div key={i} className="w-full md:w-[calc(33.333%-1rem)] bg-white p-6 rounded-2xl shadow-sm border border-gray-100 animate-pulse">
+                  <div className="h-4 bg-gray-200 rounded w-1/2 mb-4"></div>
+                  <div className="h-3 bg-gray-200 rounded w-3/4 mb-2"></div>
+                  <div className="h-3 bg-gray-200 rounded w-2/3 mb-6"></div>
+                  <div className="flex gap-2">
+                    <div className="w-10 h-10 rounded-full bg-gray-200"></div>
+                    <div className="flex-1 space-y-2">
+                      <div className="h-3 bg-gray-200 rounded w-1/3"></div>
+                      <div className="h-2 bg-gray-200 rounded w-1/4"></div>
+                    </div>
+                  </div>
                 </div>
-                <div>
-                  <p className="font-semibold text-gray-900 text-sm">
-                    {t.name}
+              ))
+            ) : (
+              reviews.map((rev) => (
+                <div key={rev._id} className="w-full md:w-[calc(33.333%-1rem)] bg-white p-6 rounded-2xl shadow-sm border border-orange-50 hover:border-orange-200 transition-all duration-300 hover:shadow-md group">
+                  <div className="flex gap-1 mb-4">
+                    <Stars count={rev.rating} />
+                  </div>
+                  <p className="text-gray-700 text-sm leading-relaxed mb-6 italic min-h-[60px]">
+                    "{rev.comment}"
                   </p>
-                  <p className="text-xs text-gray-400">{t.city}</p>
+                  <div className="flex items-center gap-3">
+                    {rev.userId.photo ? (
+                      <img src={rev.userId.photo} alt={rev.userId.name} className="w-10 h-10 rounded-full object-cover border-2 border-orange-100" />
+                    ) : (
+                      <div className="w-10 h-10 rounded-full bg-orange-100 flex items-center justify-center text-orange-600 font-bold text-sm">
+                        {rev.userId.name.charAt(0).toUpperCase()}
+                      </div>
+                    )}
+                    <div>
+                      <h4 className="font-bold text-gray-900 text-sm">{rev.userId.name}</h4>
+                      <p className="text-xs text-orange-500 font-medium">{rev.templeId.name}</p>
+                    </div>
+                  </div>
                 </div>
-              </div>
-            </div>
-          ))}
+              ))
+            )}
+          </div>
         </div>
       </div>
     </section>

@@ -385,7 +385,13 @@ function CartContent() {
               <h3 className="font-display font-semibold text-[#1a1209] mb-4">Order Summary</h3>
               <div className="flex items-center gap-3 pb-4 border-b border-[#f0dcc8] mb-4">
                 <div className="w-12 h-12 bg-[#fff8f0] rounded-xl flex items-center justify-center text-2xl overflow-hidden">
-                  {pooja.emoji || "🪔"}
+                  {pooja.images && pooja.images.length > 0 ? (
+                    <img src={pooja.images[0]} alt={pooja.name} className="w-full h-full object-cover" />
+                  ) : (
+                    <svg className="w-6 h-6 text-amber-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                    </svg>
+                  )}
                 </div>
                 <div className="flex-1">
                   <p className="font-semibold text-[#1a1209] text-sm">{pooja.name}</p>
@@ -396,8 +402,17 @@ function CartContent() {
                 <p className="font-bold text-[#ff7f0a]">₹{totalObj.base.toLocaleString()}</p>
               </div>
               {selectedOfferings.map((o) => (
-                <div key={o._id} className="flex justify-between text-xs text-[#6b5b45] mb-2">
-                  <span>{o.emoji || "🌸"} {o.name}</span>
+                <div key={o._id} className="flex justify-between items-center text-xs text-[#6b5b45] mb-2">
+                  <div className="flex items-center gap-2">
+                    {o.image ? (
+                      <img src={o.image} alt={o.name} className="w-4 h-4 rounded-sm object-cover" />
+                    ) : (
+                      <svg className="w-3 h-3 text-amber-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                      </svg>
+                    )}
+                    {o.name}
+                  </div>
                   <span>₹{o.price}</span>
                 </div>
               ))}

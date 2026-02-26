@@ -46,12 +46,14 @@ interface Pooja {
   availableDays: string;
   benefits: string[];
   isFeatured: boolean;
+  images: string[];
 }
 
 interface ChadhavaItem {
   _id: string;
   name: string;
   emoji: string;
+  image?: string;
   price: number;
   description: string;
 }
@@ -101,7 +103,15 @@ function PoojaRow({
       className="flex items-center justify-between py-2.5 px-3 rounded-xl hover:bg-[#fff8f0] border border-transparent hover:border-[#ffd9a8] transition-all"
     >
       <div className="flex items-center gap-2">
-        <span className="text-lg">{pooja.emoji || "🪔"}</span>
+        <div className="w-8 h-8 rounded-lg bg-gray-50 flex-shrink-0 overflow-hidden flex items-center justify-center">
+          {pooja.images && pooja.images.length > 0 ? (
+            <img src={pooja.images[0]} alt={pooja.name} className="w-full h-full object-cover" />
+          ) : (
+            <svg className="w-4 h-4 text-amber-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+            </svg>
+          )}
+        </div>
         <div>
           <p className="text-xs font-semibold text-[#1a1209] line-clamp-1">
             {pooja.name}
@@ -127,7 +137,13 @@ function PoojaCard({ pooja }: { pooja: Pooja }) {
     >
       {/* Emoji / image thumb */}
       <div className="w-16 h-16 rounded-xl bg-gradient-to-br from-orange-50 to-amber-100 flex items-center justify-center shrink-0 relative overflow-hidden">
-        <span className="text-3xl">{pooja.emoji || "🪔"}</span>
+        {pooja.images && pooja.images.length > 0 ? (
+          <img src={pooja.images[0]} alt={pooja.name} className="w-full h-full object-cover" />
+        ) : (
+          <svg className="w-8 h-8 text-amber-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+          </svg>
+        )}
         {pooja.tag && (
           <span
             className={`absolute top-1 left-1 text-white text-[8px] font-bold px-1.5 py-0.5 rounded-full ${pooja.tagColor || "bg-orange-500"}`}
@@ -491,7 +507,15 @@ export default function TempleDetailPage() {
                         key={item._id}
                         className="bg-white border border-[#f0dcc8] rounded-xl p-4 text-center hover:border-[#ffbd6e] hover:shadow-sm transition-all"
                       >
-                        <div className="text-3xl mb-2">{item.emoji}</div>
+                        <div className="w-12 h-12 mx-auto rounded-lg bg-gray-50 flex-shrink-0 overflow-hidden flex items-center justify-center mb-2">
+                          {item.image ? (
+                            <img src={item.image} alt={item.name} className="w-full h-full object-cover" />
+                          ) : (
+                            <svg className="w-6 h-6 text-amber-100" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                            </svg>
+                          )}
+                        </div>
                         <p className="text-xs font-semibold text-[#1a1209] mb-1">
                           {item.name}
                         </p>

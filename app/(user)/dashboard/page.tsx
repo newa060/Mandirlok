@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
-import { Calendar, Clock, Download, ChevronRight, Video } from "lucide-react";
+import { Calendar, Clock, Download, ChevronRight, Video, Star } from "lucide-react";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 interface Order {
@@ -356,6 +356,14 @@ export default function DashboardPage() {
                               <button className="flex items-center gap-1.5 text-xs btn-outline-saffron py-1.5 px-3">
                                 <Download size={12} /> Receipt
                               </button>
+                            )}
+                            {order.orderStatus === "completed" && (
+                              <Link
+                                href={`/bookings/${order._id}#review-section`}
+                                className="flex items-center gap-1.5 text-xs bg-amber-50 border border-amber-200 text-amber-700 px-3 py-1.5 rounded-full font-medium hover:bg-amber-100"
+                              >
+                                <Star size={12} className="fill-amber-500 text-amber-500" /> Rate Pooja
+                              </Link>
                             )}
                             {(order.orderStatus === "pending" || order.orderStatus === "confirmed") && (
                               <button

@@ -16,6 +16,7 @@ import {
     Flower,
     Menu,
     X,
+    MessageCircle,
 } from "lucide-react";
 
 const navItems = [
@@ -27,6 +28,7 @@ const navItems = [
     { label: "Pandits", href: "/admin/pandits", icon: <Users size={18} /> },
     { label: "Payments", href: "/admin/payments", icon: <IndianRupee size={18} /> },
     { label: "Settings", href: "/admin/settings", icon: <Settings size={18} /> },
+    { label: "Reviews", href: "/admin/reviews", icon: <MessageCircle size={18} /> },
 ];
 
 export default function AdminSidebar() {
