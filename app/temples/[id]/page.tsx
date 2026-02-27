@@ -8,6 +8,7 @@ import Footer from "@/components/layout/Footer";
 import StarRating from "@/components/ui/StarRating";
 import Badge from "@/components/ui/Badge";
 import { MapPin, Clock, Globe, Phone, ChevronRight, Heart } from "lucide-react";
+import { getUserTempleFavorites, toggleTempleFavorite } from "@/lib/actions/user";
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 interface Temple {
@@ -174,12 +175,8 @@ function PoojaCard({ pooja }: { pooja: Pooja }) {
         </div>
       </div>
 
-      {/* Price */}
-      <div className="shrink-0 text-right flex flex-col items-end justify-between">
-        <p className="font-bold text-[#ff7f0a] text-base">
-          ₹{pooja.price?.toLocaleString()}
-        </p>
-        <span className="text-[10px] bg-[#fff8f0] border border-[#ffd9a8] text-[#ff7f0a] font-semibold px-2 py-0.5 rounded-full">
+      <div className="shrink-0 text-right flex flex-col items-end justify-center">
+        <span className="text-[10px] bg-[#fff8f0] border border-[#ffd9a8] text-[#ff7f0a] font-semibold px-3 py-1.5 rounded-full">
           Book →
         </span>
       </div>
@@ -234,7 +231,7 @@ export default function TempleDetailPage() {
   useEffect(() => {
     if (!id) return;
 
-    async function fetchTemple() {
+    async function fetchTempleAndStatus() {
       try {
         setLoading(true);
         const res = await fetch(`/api/temples/${id}`);
@@ -245,9 +242,16 @@ export default function TempleDetailPage() {
           return;
         }
 
-        setTemple(data.data.temple);
+        const templeData = data.data.temple;
+        setTemple(templeData);
         setPoojas(data.data.poojas || []);
         setChadhavaItems(data.data.chadhavaItems || []);
+
+        // Fetch favorites status
+        const favRes = await getUserTempleFavorites();
+        if (favRes.success && favRes.data && templeData) {
+          setWishlisted(favRes.data.includes(templeData._id));
+        }
       } catch (err) {
         console.error(err);
         setError("Failed to load temple. Please try again.");
@@ -256,8 +260,18 @@ export default function TempleDetailPage() {
       }
     }
 
-    fetchTemple();
+    fetchTempleAndStatus();
   }, [id]);
+
+  const handleToggleWishlist = async () => {
+    if (!temple?._id) return;
+    const res = await toggleTempleFavorite(temple._id);
+    if (res.success) {
+      setWishlisted(res.isAdded ?? !wishlisted);
+    } else {
+      alert(res.message || "Failed to toggle favorite");
+    }
+  };
 
   // ── Loading ────────────────────────────────────────────────────────────────
   if (loading) return <PageSkeleton />;
@@ -376,7 +390,7 @@ export default function TempleDetailPage() {
                     </p>
                   </div>
                   <button
-                    onClick={() => setWishlisted((v) => !v)}
+                    onClick={handleToggleWishlist}
                     className="bg-white/15 backdrop-blur border border-white/30 rounded-xl p-3 text-white hover:bg-white/25 transition-colors"
                   >
                     <Heart
@@ -525,10 +539,10 @@ export default function TempleDetailPage() {
                           </p>
                         )}
                         <Link
-                          href="/chadhava"
+                          href={`/chadhava/${item._id}`}
                           className="block bg-gradient-to-r from-[#ff7f0a] to-[#ff9b30] text-white text-[10px] font-bold py-1.5 rounded-full hover:shadow-sm transition-all"
                         >
-                          Add Offering
+                          View Offering
                         </Link>
                       </div>
                     ))}

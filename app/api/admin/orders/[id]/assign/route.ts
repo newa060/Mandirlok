@@ -18,7 +18,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
     const { panditId } = await req.json();
 
     const [order, pandit] = await Promise.all([
-      Order.findByIdAndUpdate(params.id, { panditId, orderStatus: "confirmed" }, { new: true })
+      Order.findByIdAndUpdate(params.id, { panditId, orderStatus: "assigned" }, { new: true })
         .populate("poojaId", "name"),
       Pandit.findById(panditId),
     ]);

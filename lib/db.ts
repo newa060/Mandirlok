@@ -16,6 +16,7 @@ import "../models/Otp";
 import "../models/Review";
 import "../models/Payout";
 import "../models/Pandit";
+import "../models/Notification";
 
 let cached = (global as any).mongoose;
 

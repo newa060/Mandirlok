@@ -5,7 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
-import { ChevronRight, Shield, Loader2 } from "lucide-react";
+import { ChevronRight, Shield, Loader2, Heart, Sparkles, MapPin, Calendar, ArrowRight } from "lucide-react";
 
 // ── Razorpay types ─────────────────────────────────────────────────────────────
 declare global {
@@ -34,9 +34,16 @@ function CartContent() {
   const dateStr = searchParams.get("date");
   const qtyStr = searchParams.get("qty");
   const offeringsStr = searchParams.get("offerings"); // comma-separated ids
+  const isDonationParam = searchParams.get("isDonation") === "true";
+  const customAmountParam = parseInt(searchParams.get("customAmount") || "0", 10);
 
   const qty = qtyStr ? parseInt(qtyStr, 10) : 1;
-  const selectedOfferingIds = offeringsStr ? offeringsStr.split(",") : [];
+  const rawOfferings = offeringsStr ? offeringsStr.split(",") : [];
+  const selectedOfferingData = rawOfferings.map(s => {
+    const [id, q] = s.split(":");
+    return { id, quantity: q ? parseInt(q, 10) : 1 };
+  });
+  const selectedOfferingIds = selectedOfferingData.map(o => o.id);
 
   const [pooja, setPooja] = useState<any>(null);
   const [selectedOfferings, setSelectedOfferings] = useState<any[]>([]);
@@ -60,26 +67,78 @@ function CartContent() {
   const [payError, setPayError] = useState("");
 
   useEffect(() => {
-    if (!poojaId) {
-      setConfigError("Invalid booking link (Missing Pooja ID).");
-      setLoadingConfig(false);
-      return;
+    async function fetchData() {
+      setLoadingConfig(true);
+      setConfigError("");
+
+      try {
+        if (poojaId) {
+          // Case 1: Booking with a Pooja
+          const res = await fetch(`/api/poojas/${poojaId}`);
+          const data = await res.json();
+          if (data.success) {
+            setPooja(data.data.pooja);
+            const allOfferings = data.data.chadhavaItems || [];
+            const filtered = allOfferings.filter((o: any) => selectedOfferingIds.includes(o._id));
+            setSelectedOfferings(filtered.map((o: any) => ({
+              ...o,
+              quantity: selectedOfferingData.find(d => d.id === o._id)?.quantity || 1
+            })));
+          } else {
+            setConfigError("Pooja details could not be loaded.");
+          }
+        } else if (templeId && selectedOfferingIds.length > 0) {
+          // Case 2: Standalone Chadhava booking
+          // Fetch temple details for the summary
+          const templeRes = await fetch(`/api/temples/${templeId}`);
+          const templeData = await templeRes.json();
+
+          // Fetch the chadhava items details
+          // We can use the generic chadhava API or just fetch them one by one/filter
+          // For now, let's fetch them using the chadhava list API with IDs
+          const chadhavaRes = await fetch(`/api/chadhava?templeId=${templeId}`);
+          const chadhavaData = await chadhavaRes.json();
+
+          if (templeData.success && chadhavaData.success) {
+            // Mock a "pooja" object for the UI context where it expects templeId.name
+            setPooja({
+              name: "Sacred Offering",
+              price: 0,
+              templeId: templeData.data
+            });
+            const allOfferings = chadhavaData.data || [];
+            const filtered = allOfferings.filter((o: any) => selectedOfferingIds.includes(o._id));
+            setSelectedOfferings(filtered.map((o: any) => ({
+              ...o,
+              quantity: selectedOfferingData.find(d => d.id === o._id)?.quantity || 1
+            })));
+          } else {
+            setConfigError("Offering details could not be loaded.");
+          }
+        } else if (templeId && isDonationParam) {
+          const templeRes = await fetch(`/api/temples/${templeId}`);
+          const templeData = await templeRes.json();
+          if (templeData.success) {
+            setPooja({
+              name: "Sacred Contribution",
+              price: 0,
+              templeId: templeData.data
+            });
+          } else {
+            setConfigError("Temple details could not be loaded.");
+          }
+        } else {
+          setConfigError("Invalid booking link (Missing details).");
+        }
+      } catch (err) {
+        setConfigError("Network error while loading details.");
+      } finally {
+        setLoadingConfig(false);
+      }
     }
 
-    fetch(`/api/poojas/${poojaId}`)
-      .then((res) => res.json())
-      .then((data) => {
-        if (data.success) {
-          setPooja(data.data.pooja);
-          const allOfferings = data.data.chadhavaItems || [];
-          setSelectedOfferings(allOfferings.filter((o: any) => selectedOfferingIds.includes(o._id)));
-        } else {
-          setConfigError("Pooja details could not be loaded.");
-        }
-      })
-      .catch(() => setConfigError("Network error while loading pooja details."))
-      .finally(() => setLoadingConfig(false));
-  }, [poojaId]);
+    fetchData();
+  }, [poojaId, templeId, offeringsStr]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     setForm((f) => ({ ...f, [e.target.name]: e.target.value }));
@@ -90,8 +149,10 @@ function CartContent() {
   let totalObj = { base: 0, offerings: 0, sum: 0 };
   if (pooja) {
     totalObj.base = pooja.price * qty;
-    totalObj.offerings = selectedOfferings.reduce((sum, o) => sum + o.price, 0);
-    totalObj.sum = totalObj.base + totalObj.offerings;
+    totalObj.offerings = selectedOfferings.reduce((sum, o) => sum + (o.price * (o.quantity || 1)), 0);
+    totalObj.sum = totalObj.base + totalObj.offerings + customAmountParam;
+  } else if (templeId && isDonationParam) {
+    totalObj.sum = customAmountParam;
   }
 
   const handlePay = async () => {
@@ -99,8 +160,16 @@ function CartContent() {
     setPaying(true);
 
     try {
-      if (!dateStr || !templeId) {
-        throw new Error("Missing date or temple information for booking.");
+      if (!templeId) {
+        throw new Error("Missing temple information for booking.");
+      }
+
+      if (!poojaId && !isDonationParam) {
+        throw new Error("Missing pooja selection.");
+      }
+
+      if (poojaId && !dateStr) {
+        throw new Error("Missing date information for pooja booking.");
       }
 
       const loaded = await loadRazorpayScript();
@@ -113,6 +182,7 @@ function CartContent() {
           poojaId,
           qty,
           chadhavaIds: selectedOfferingIds,
+          extraDonation: customAmountParam,
         }),
       });
       const orderData = await orderRes.json();
@@ -126,7 +196,7 @@ function CartContent() {
           amount: amount * 100,
           currency: "INR",
           name: "MandirLok",
-          description: `Booking: ${pooja.name}`,
+          description: `Booking: ${pooja ? (pooja.name === 'Sacred Offering' ? selectedOfferings.map(o => o.name).join(', ') : pooja.name) : 'Direct Temple Donation'}`,
           order_id: razorpayOrderId,
           prefill: {
             name: form.name,
@@ -145,11 +215,17 @@ function CartContent() {
                   razorpayOrderId: response.razorpay_order_id,
                   razorpayPaymentId: response.razorpay_payment_id,
                   razorpaySignature: response.razorpay_signature,
-                  poojaId,
+                  poojaId: poojaId || undefined,
                   templeId,
-                  bookingDate: new Date(dateStr as string).toISOString(), // Parse standard YYYY-MM-DD
+                  bookingDate: dateStr ? new Date(dateStr as string).toISOString() : new Date().toISOString(),
                   qty,
-                  chadhavaIds: selectedOfferingIds,
+                  chadhavaItems: selectedOfferings.map(o => ({
+                    chadhavaId: o._id,
+                    name: o.name,
+                    price: o.price,
+                    emoji: o.emoji,
+                    quantity: o.quantity || 1
+                  })),
                   sankalpName: form.name,
                   gotra: form.gotra,
                   dob: form.dob,
@@ -157,6 +233,8 @@ function CartContent() {
                   whatsapp: `${sameAsPhone ? countryCode : whatsappCountryCode}${form.whatsapp}`,
                   sankalp: form.sankalp,
                   address: form.address,
+                  isDonation: isDonationParam,
+                  extraDonation: customAmountParam,
                 }),
               });
               const verifyData = await verifyRes.json();
@@ -385,21 +463,38 @@ function CartContent() {
               <h3 className="font-display font-semibold text-[#1a1209] mb-4">Order Summary</h3>
               <div className="flex items-center gap-3 pb-4 border-b border-[#f0dcc8] mb-4">
                 <div className="w-12 h-12 bg-[#fff8f0] rounded-xl flex items-center justify-center text-2xl overflow-hidden">
-                  {pooja.images && pooja.images.length > 0 ? (
+                  {pooja?.images && pooja.images.length > 0 ? (
                     <img src={pooja.images[0]} alt={pooja.name} className="w-full h-full object-cover" />
-                  ) : (
+                  ) : pooja ? (
                     <svg className="w-6 h-6 text-amber-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
                     </svg>
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center bg-amber-100 text-amber-600">
+                      <Heart size={24} fill="currentColor" />
+                    </div>
                   )}
                 </div>
                 <div className="flex-1">
-                  <p className="font-semibold text-[#1a1209] text-sm">{pooja.name}</p>
-                  <p className="text-xs text-[#ff7f0a]">🛕 {pooja.templeId?.name}</p>
-                  <p className="text-xs text-[#6b5b45]">📅 {dateStr ? new Date(dateStr).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" }) : ""}</p>
-                  <p className="text-xs text-[#6b5b45]">👥 {qty} Devotee{qty > 1 ? "s" : ""}</p>
+                  <p className="font-semibold text-[#1a1209] text-sm">
+                    {pooja ? (pooja.name === 'Sacred Offering' ? 'Chadhava Offering' : pooja.name) : 'Sacred Contribution'}
+                  </p>
+                  <p className="text-xs text-[#ff7f0a]">🛕 {pooja?.templeId?.name}</p>
+                  {isDonationParam && (
+                    <p className="text-[10px] inline-flex items-center gap-1 bg-amber-50 text-amber-700 px-2 py-0.5 rounded-full font-bold mt-1">
+                      📜 {pooja ? 'Direct Donation' : 'Temple Support'}
+                    </p>
+                  )}
+                  {dateStr && (
+                    <p className="text-xs text-[#6b5b45]">📅 {new Date(dateStr).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}</p>
+                  )}
+                  {pooja && pooja.name !== 'Sacred Offering' && (
+                    <p className="text-xs text-[#6b5b45]">👥 {qty} Devotee{qty > 1 ? "s" : ""}</p>
+                  )}
                 </div>
-                <p className="font-bold text-[#ff7f0a]">₹{totalObj.base.toLocaleString()}</p>
+                {totalObj.base > 0 && (
+                  <p className="font-bold text-[#ff7f0a]">₹{totalObj.base.toLocaleString()}</p>
+                )}
               </div>
               {selectedOfferings.map((o) => (
                 <div key={o._id} className="flex justify-between items-center text-xs text-[#6b5b45] mb-2">
@@ -412,10 +507,17 @@ function CartContent() {
                       </svg>
                     )}
                     {o.name}
+                    {o.quantity > 1 && <span className="ml-1 text-[10px] font-bold text-amber-600 bg-amber-50 px-1.5 py-0.5 rounded">x{o.quantity}</span>}
                   </div>
-                  <span>₹{o.price}</span>
+                  <span>₹{(o.price * o.quantity).toLocaleString()}</span>
                 </div>
               ))}
+              {customAmountParam > 0 && (
+                <div className="flex justify-between items-center text-xs text-amber-600 font-bold mt-2 pt-2 border-t border-amber-50/50">
+                  <span>✨ Additional Donation </span>
+                  <span>₹{customAmountParam.toLocaleString()}</span>
+                </div>
+              )}
               <div className="border-t border-[#f0dcc8] mt-3 pt-3">
                 <div className="flex justify-between font-bold text-base text-[#1a1209]">
                   <span>Total Payable</span>
@@ -423,8 +525,17 @@ function CartContent() {
                 </div>
               </div>
               <div className="mt-4 space-y-1.5 text-xs text-[#6b5b45]">
-                <p>📹 Video on WhatsApp after pooja</p>
-                <p>🙏 Personalized sankalp by pandit</p>
+                {!isDonationParam ? (
+                  <>
+                    <p>📹 Video on WhatsApp after pooja</p>
+                    <p>🙏 Personalized sankalp by pandit</p>
+                  </>
+                ) : (
+                  <>
+                    <p>📜 Immediate digital certificate</p>
+                    <p>🙏 Meritorious donation contribution</p>
+                  </>
+                )}
                 <p>↩️ 100% refund if cancelled 24hrs before</p>
               </div>
             </div>

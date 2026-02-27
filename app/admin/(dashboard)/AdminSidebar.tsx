@@ -21,12 +21,18 @@ import {
 
 const navItems = [
     { label: "Dashboard", href: "/admin", icon: <LayoutDashboard size={18} /> },
+    { label: "Analytics", href: "/admin/analytics", icon: <BarChart3 size={18} /> },
     { label: "Orders", href: "/admin/orders", icon: <ShoppingBag size={18} /> },
     { label: "Temples", href: "/admin/temples", icon: <MapPin size={18} /> },
     { label: "Poojas", href: "/admin/poojas", icon: <Star size={18} /> },
     { label: "Chadhava", href: "/admin/chadhava", icon: <Flower size={18} /> },
     { label: "Pandits", href: "/admin/pandits", icon: <Users size={18} /> },
-    { label: "Payments", href: "/admin/payments", icon: <IndianRupee size={18} /> },
+    {
+        label: "Payments",
+        href: "/admin/payments/transactions",
+        icon: <IndianRupee size={18} />,
+    },
+    { label: "Payouts", href: "/admin/payments/payouts", icon: <IndianRupee size={18} /> },
     { label: "Settings", href: "/admin/settings", icon: <Settings size={18} /> },
     { label: "Reviews", href: "/admin/reviews", icon: <MessageCircle size={18} /> },
 ];

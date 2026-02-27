@@ -12,6 +12,7 @@ export interface IUser extends Document {
   isActive: boolean;
   lastLogin?: Date;
   savedTemples: mongoose.Types.ObjectId[];
+  savedChadhava: mongoose.Types.ObjectId[];
   createdAt: Date;
   updatedAt: Date;
 }
@@ -29,6 +30,7 @@ const UserSchema = new Schema<IUser>(
     isActive: { type: Boolean, default: true },
     lastLogin: { type: Date, default: null },
     savedTemples: [{ type: Schema.Types.ObjectId, ref: "Temple" }],
+    savedChadhava: [{ type: Schema.Types.ObjectId, ref: "Chadhava" }],
   },
   { timestamps: true }
 );

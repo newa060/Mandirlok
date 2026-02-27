@@ -6,6 +6,28 @@ import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import { getSettings } from "@/lib/actions/admin";
 import { getHomepageReviews } from "@/lib/actions/reviews";
+import { getFeaturedPoojas } from "@/lib/actions/poojas";
+
+// ── Types ─────────────────────────────────────────────────────────────────────
+interface Pooja {
+  _id: string;
+  name: string;
+  description: string;
+  price: number;
+  slug: string;
+  emoji: string;
+  tag: string;
+  tagColor: string;
+  availableDays: string;
+  benefit: string;
+  deity: string;
+  templeId: {
+    _id: string;
+    name: string;
+    location: string;
+    city: string;
+  };
+}
 
 // ── Temple Images (real Wikimedia Commons photos) ────────────────────────────
 const SLIDE_IMAGES = [
@@ -255,100 +277,73 @@ function SectionHeader({
   );
 }
 
-// ── Puja Card (no price) ──────────────────────────────────────────────────────
-function PujaCard({ puja }: { puja: (typeof FEATURED_POOJAS)[0] }) {
+// ── Puja Card ────────────────────────────────────────────────────────────────
+function PujaCard({ puja }: { puja: Pooja }) {
   return (
-    <div className="group bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300 hover:-translate-y-1 border border-gray-100">
-      {/* Image placeholder */}
-      <div className="relative h-48 overflow-hidden bg-gradient-to-br from-orange-800/70 to-rose-900/70 flex items-center justify-center">
-        <div
-          className="absolute inset-0 opacity-10"
-          style={{
-            backgroundImage:
-              "url(\"data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='1'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E\")",
-          }}
-        />
-        <span className="text-6xl group-hover:scale-110 transition-transform duration-500 relative z-10">
-          {puja.emoji}
+    <div className="group bg-white rounded-3xl overflow-hidden hover:shadow-2xl transition-all duration-500 hover:-translate-y-2 border border-gray-100 flex flex-col h-full">
+      <div className="relative h-48 sm:h-56 bg-gradient-to-br from-orange-400 via-orange-500 to-amber-500 p-8 flex items-center justify-center overflow-hidden">
+        <div className="absolute inset-0 opacity-10 mix-blend-overlay">
+          <svg className="w-full h-full" viewBox="0 0 100 100">
+            <path d="M50 0 L100 50 L50 100 L0 50 Z" fill="white" fillOpacity="0.2" />
+          </svg>
+        </div>
+        <span className="text-8xl transform group-hover:scale-110 transition-transform duration-700">
+          {puja.emoji || "🔱"}
         </span>
         {puja.tag && (
-          <span
-            className={`absolute top-3 left-3 ${puja.tagColor} text-white text-xs font-bold px-2.5 py-1 rounded-full`}
-          >
-            {puja.tag}
-          </span>
+          <div className="absolute top-4 right-4">
+            <span className={`${puja.tagColor || "bg-orange-500"} text-white text-[10px] font-bold px-3 py-1 rounded-full shadow-lg backdrop-blur-sm`}>
+              {puja.tag}
+            </span>
+          </div>
         )}
-        <span className="absolute bottom-3 right-3 bg-black/60 text-white text-xs px-2.5 py-1 rounded-full backdrop-blur-sm">
-          {puja.deity}
-        </span>
       </div>
-      {/* Content */}
-      <div className="p-5">
-        <h3 className="font-bold text-gray-900 text-base mb-1 line-clamp-2 leading-snug">
-          {puja.title}
+
+      <div className="p-6 md:p-8 flex flex-col flex-1">
+        <div className="flex items-center gap-2 mb-3">
+          <div className="w-1.5 h-1.5 rounded-full bg-orange-500 animate-pulse" />
+          <span className="text-[10px] font-bold text-orange-600 uppercase tracking-widest">
+            {puja.deity || "Sacred"} Special
+          </span>
+        </div>
+
+        <h3 className="text-xl md:text-2xl font-bold text-gray-900 group-hover:text-orange-600 transition-colors duration-300 mb-2 line-clamp-2">
+          {puja.name}
         </h3>
-        <div className="flex items-center gap-1.5 mb-1">
-          <svg
-            className="w-3.5 h-3.5 text-orange-400 shrink-0"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"
-            />
+
+        <div className="flex items-start gap-2 mb-4">
+          <svg className="w-4 h-4 text-orange-500 mt-1 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+            <circle cx="12" cy="10" r="3" />
           </svg>
-          <p className="text-xs text-gray-500 line-clamp-1">{puja.temple}</p>
+          <p className="text-sm text-gray-600 leading-snug">{puja.templeId?.name}, {puja.templeId?.city}</p>
         </div>
-        <div className="flex items-center gap-1.5 mb-3">
-          <svg
-            className="w-3.5 h-3.5 text-orange-400 shrink-0"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
-            />
-          </svg>
-          <p className="text-xs text-gray-500 font-medium">{puja.date}</p>
-        </div>
-        <p className="text-xs text-gray-600 mb-4 line-clamp-2 leading-relaxed">
+
+        <p className="text-gray-500 text-sm leading-relaxed mb-6 line-clamp-3">
           {puja.description}
         </p>
-        <div className="flex items-center gap-2 mb-4">
-          <span className="bg-orange-50 text-orange-700 text-xs px-2 py-0.5 rounded-full border border-orange-100">
-            ✓ {puja.benefit}
-          </span>
-          <span className="bg-orange-50 text-orange-700 text-xs px-2 py-0.5 rounded-full border border-orange-100">
-            📹 Video Proof
-          </span>
-        </div>
-        <Link
-          href="/poojas"
-          className="w-full flex items-center justify-center gap-1.5 bg-orange-500 hover:bg-orange-600 text-white text-sm font-bold px-4 py-2.5 rounded-full transition-all duration-200 hover:shadow-lg hover:shadow-orange-200"
-        >
-          Participate Now
-          <svg
-            className="w-3.5 h-3.5"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
+
+        <div className="mt-auto flex flex-col gap-4">
+          <div className="flex items-center justify-between p-4 rounded-2xl bg-orange-50/50 border border-orange-100/50">
+            <div>
+              <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">Benefit</p>
+              <p className="font-bold text-gray-900 text-sm">{puja.benefit || "Grace"}</p>
+            </div>
+            <div className="text-right">
+              <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">Schedule</p>
+              <p className="font-bold text-orange-600 text-sm">{puja.availableDays || "Daily"}</p>
+            </div>
+          </div>
+          
+
+
+          <Link
+            href={`/poojas/${puja.slug}`}
+            className="w-full bg-gray-900 text-white font-bold py-4 rounded-2xl text-center group-hover:bg-orange-600 transition-all duration-300 shadow-xl shadow-gray-200 group-hover:shadow-orange-200"
           >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M17 8l4 4m0 0l-4 4m4-4H3"
-            />
-          </svg>
-        </Link>
+            Participate Now 🙏
+          </Link>
+        </div>
       </div>
     </div>
   );
@@ -842,6 +837,26 @@ function TestimonialsSection() {
 
 // ── Main Export ───────────────────────────────────────────────────────────────
 export default function HomePage() {
+  const [poojas, setPoojas] = useState<Pooja[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    async function fetchPoojas() {
+      try {
+        setLoading(true);
+        const res = await getFeaturedPoojas();
+        if (res.success) {
+          setPoojas(res.data);
+        }
+      } catch (err) {
+        console.error("fetchPoojas error:", err);
+      } finally {
+        setLoading(false);
+      }
+    }
+    fetchPoojas();
+  }, []);
+
   return (
     <>
       <Navbar />
@@ -857,11 +872,23 @@ export default function HomePage() {
               title="Upcoming Sacred Pujas & Rituals"
               subtitle="Participate in authentic pujas performed at India's most powerful temples. Receive a video within 24–48 hours."
             />
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-10">
-              {FEATURED_POOJAS.map((puja, i) => (
-                <PujaCard key={i} puja={puja} />
-              ))}
-            </div>
+            {loading ? (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-10">
+                {[1, 2, 3].map((i) => (
+                  <div key={i} className="bg-gray-50 rounded-3xl h-96 animate-pulse" />
+                ))}
+              </div>
+            ) : poojas.length > 0 ? (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-10">
+                {poojas.map((puja) => (
+                  <PujaCard key={puja._id} puja={puja} />
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-10">
+                <p className="text-gray-500">No featured pujas available right now.</p>
+              </div>
+            )}
             <div className="text-center">
               <Link
                 href="/poojas"

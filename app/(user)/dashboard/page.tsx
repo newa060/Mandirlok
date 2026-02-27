@@ -162,9 +162,6 @@ export default function DashboardPage() {
                     {profile?.name || "Devotee"}
                   </h2>
                   <p className="text-xs text-[#6b5b45]">{profile?.email || ""}</p>
-                  {profile?.phone && (
-                    <p className="text-xs text-[#6b5b45]">{profile.phone}</p>
-                  )}
                   <span className="badge-saffron mt-2 inline-block">Devotee</span>
                 </div>
 
@@ -180,8 +177,8 @@ export default function DashboardPage() {
                       key={item.label}
                       href={item.href}
                       className={`flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm transition-colors ${item.active
-                          ? "bg-[#fff8f0] text-[#ff7f0a] font-semibold border border-[#ffd9a8]"
-                          : "text-[#6b5b45] hover:bg-[#fdf6ee] hover:text-[#ff7f0a]"
+                        ? "bg-[#fff8f0] text-[#ff7f0a] font-semibold border border-[#ffd9a8]"
+                        : "text-[#6b5b45] hover:bg-[#fdf6ee] hover:text-[#ff7f0a]"
                         }`}
                     >
                       {item.label}
@@ -207,18 +204,18 @@ export default function DashboardPage() {
 
             {/* ── Main Content ── */}
             <div className="lg:col-span-3 space-y-5">
-              
+
               {/* Dynamic Banner */}
               <div className="relative h-40 md:h-48 rounded-3xl overflow-hidden shadow-card border border-[#f0dcc8]">
-                <img 
-                  src={dashSettings.bannerUrl || "https://images.unsplash.com/photo-1542273917363-3b1817f69a2d?q=80&w=2074&auto=format&fit=crop"} 
-                  className="w-full h-full object-cover" 
-                  alt="Dashboard Banner" 
+                <img
+                  src={dashSettings.bannerUrl || "https://images.unsplash.com/photo-1542273917363-3b1817f69a2d?q=80&w=2074&auto=format&fit=crop"}
+                  className="w-full h-full object-cover"
+                  alt="Dashboard Banner"
                 />
                 <div className="absolute inset-0 bg-gradient-to-r from-black/60 to-transparent flex items-center px-8">
                   <div className="max-w-md">
                     <h1 className="text-2xl md:text-3xl font-display font-bold text-white mb-2">
-                       {dashSettings.welcomeMessage}
+                      {dashSettings.welcomeMessage}
                     </h1>
                     <p className="text-orange-200 text-sm font-medium">
                       Manage your spiritual journey and pooja bookings in one place.

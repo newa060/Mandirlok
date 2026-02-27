@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { connectDB } from "@/lib/db";
 import Order from "@/models/Order";
+import Notification from "@/models/Notification";
 import Pandit from "@/models/Pandit";
 import { getPanditFromRequest } from "@/lib/panditAuth";
 import { sendWhatsApp } from "@/lib/whatsapp";
@@ -65,6 +66,19 @@ export async function POST(
       await sendWhatsApp(order.whatsapp, message);
     } catch (waError) {
       console.error("Failed to send WhatsApp notification:", waError);
+    }
+
+    // Create In-app Notification
+    try {
+      await Notification.create({
+        userId: order.userId,
+        title: "Pooja Video Uploaded! 📹",
+        message: `Your ${(order.poojaId as any).name} at ${(order.templeId as any).name} has been completed. You can now watch the video proof.`,
+        type: "video",
+        link: `/bookings/${order._id}`
+      });
+    } catch (notifError) {
+      console.error("Failed to create in-app notification:", notifError);
     }
 
     return NextResponse.json({

@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
+import { getSettings } from "@/lib/actions/admin";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 interface Temple {
@@ -197,10 +198,18 @@ function SkeletonCard() {
 }
 
 // ── Page Banner ───────────────────────────────────────────────────────────────
-function PageBanner() {
+function PageBanner({ bannerBg }: { bannerBg?: string }) {
   return (
     <section className="relative h-64 md:h-80 overflow-hidden">
-      <div className="absolute inset-0 bg-gradient-to-br from-[#3d0a00] to-[#1a0500]" />
+      {bannerBg ? (
+        <img
+          src={bannerBg}
+          alt="Banner"
+          className="absolute inset-0 w-full h-full object-cover"
+        />
+      ) : (
+        <div className="absolute inset-0 bg-gradient-to-br from-[#3d0a00] to-[#1a0500]" />
+      )}
       <div className="absolute inset-0 bg-gradient-to-r from-[#1a0500]/90 via-[#2d0a00]/70 to-transparent" />
       <div className="relative z-10 h-full flex items-center">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full">
@@ -285,9 +294,22 @@ export default function PoojasPage() {
   const [activeFilter, setActiveFilter] = useState("All Pujas");
   const [sortBy, setSortBy] = useState("Most Popular");
   const [search, setSearch] = useState("");
+  const [bannerBg, setBannerBg] = useState("");
 
   // Fetch poojas from API
   useEffect(() => {
+    const fetchBanner = async () => {
+      try {
+        const res = await getSettings("page_banners");
+        if (res && res.value && res.value.poojas) {
+          setBannerBg(res.value.poojas);
+        }
+      } catch (err) {
+        console.error("Failed to fetch banner settings:", err);
+      }
+    };
+    fetchBanner();
+
     const fetchPoojas = async () => {
       setLoading(true);
       setError("");
@@ -329,7 +351,7 @@ export default function PoojasPage() {
     <>
       <Navbar />
       <main className="min-h-screen bg-gray-50 font-sans">
-        <PageBanner />
+        <PageBanner bannerBg={bannerBg} />
         <HowItWorksBanner />
 
         {/* Sticky Filter Bar */}
@@ -340,11 +362,10 @@ export default function PoojasPage() {
                 <button
                   key={f}
                   onClick={() => setActiveFilter(f)}
-                  className={`shrink-0 px-4 py-1.5 rounded-full text-sm font-medium transition-all duration-200 whitespace-nowrap ${
-                    activeFilter === f
-                      ? "bg-orange-500 text-white shadow-md"
-                      : "bg-gray-100 text-gray-600 hover:bg-gray-200"
-                  }`}
+                  className={`shrink-0 px-4 py-1.5 rounded-full text-sm font-medium transition-all duration-200 whitespace-nowrap ${activeFilter === f
+                    ? "bg-orange-500 text-white shadow-md"
+                    : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                    }`}
                 >
                   {f}
                 </button>

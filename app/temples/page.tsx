@@ -5,6 +5,10 @@ import Link from "next/link";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 
+import { Search, MapPin, ChevronRight, Heart, Star } from "lucide-react";
+import { getUserTempleFavorites, toggleTempleFavorite } from "@/lib/actions/user";
+import { getSettings } from "@/lib/actions/admin";
+
 // ── Types ─────────────────────────────────────────────────────────────────────
 interface Temple {
   _id: string;
@@ -66,78 +70,96 @@ function ImagePlaceholder({ label = "", className = "" }: { label?: string; clas
 }
 
 // ── Temple Card ───────────────────────────────────────────────────────────────
-function TempleCard({ temple }: { temple: Temple }) {
+function TempleCard({
+  temple,
+  isFavorite,
+  onToggle
+}: {
+  temple: Temple;
+  isFavorite: boolean;
+  onToggle: (id: string) => void;
+}) {
   return (
-    <Link href={`/temples/${temple.slug || temple._id}`} className="group block">
-      <div className="bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300 hover:-translate-y-1 border border-gray-100">
-        {/* Image */}
-        <div className="relative h-52 overflow-hidden">
-          {temple.images?.[0] ? (
-            <img
-              src={temple.images[0]}
-              alt={temple.name}
-              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-            />
-          ) : (
-            <ImagePlaceholder
-              className="w-full h-full group-hover:scale-105 transition-transform duration-500"
-              label={temple.name}
-            />
-          )}
+    <div className="group relative bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300 hover:-translate-y-1 border border-gray-100 flex flex-col h-full cursor-pointer">
+      {/* Link Overlay */}
+      <Link href={`/temples/${temple.slug || temple._id}`} className="absolute inset-0 z-0" />
 
-          {/* Badges */}
-          <div className="absolute top-3 left-3 flex gap-2">
-            {temple.isFeatured && (
-              <span className="bg-orange-500 text-white text-xs font-bold px-2.5 py-1 rounded-full">
-                FEATURED
-              </span>
-            )}
-            {temple.isPopular && (
-              <span className="bg-rose-500 text-white text-xs font-bold px-2.5 py-1 rounded-full">
-                POPULAR
-              </span>
-            )}
-          </div>
+      {/* Image */}
+      <div className="relative h-52 overflow-hidden z-10">
+        {temple.images?.[0] ? (
+          <img
+            src={temple.images[0]}
+            alt={temple.name}
+            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+          />
+        ) : (
+          <ImagePlaceholder
+            className="w-full h-full group-hover:scale-105 transition-transform duration-500"
+            label={temple.name}
+          />
+        )}
 
-          {/* Category Tag */}
-          <div className="absolute bottom-3 left-3">
-            <span className="bg-black/60 text-white text-xs px-2.5 py-1 rounded-full backdrop-blur-sm">
-              {temple.category}
+        {/* Favorite Button */}
+        <button
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            onToggle(temple._id);
+          }}
+          className={`absolute top-3 right-3 w-9 h-9 backdrop-blur-md rounded-xl flex items-center justify-center transition-all shadow-sm z-20 ${isFavorite
+              ? "bg-rose-500 text-white"
+              : "bg-white/80 text-gray-400 hover:text-rose-500 hover:bg-white"
+            }`}
+        >
+          <Heart size={16} fill={isFavorite ? "currentColor" : "none"} />
+        </button>
+
+        {/* Badges */}
+        <div className="absolute top-3 left-3 flex flex-col gap-1.5 z-10 pointer-events-none">
+          {temple.isFeatured && (
+            <span className="bg-orange-500 text-white text-[9px] font-bold px-2 py-0.5 rounded-lg shadow-lg">
+              FEATURED
             </span>
-          </div>
+          )}
+          {temple.isPopular && (
+            <span className="bg-rose-500 text-white text-[9px] font-bold px-2 py-0.5 rounded-lg shadow-lg">
+              POPULAR
+            </span>
+          )}
         </div>
 
-        {/* Content */}
-        <div className="p-5">
-          <h3 className="font-bold text-gray-900 text-base mb-1 line-clamp-1">{temple.name}</h3>
+        {/* Category Tag */}
+        <div className="absolute bottom-3 left-3 z-10 pointer-events-none">
+          <span className="bg-black/60 text-white text-[10px] font-medium px-2.5 py-1 rounded-lg backdrop-blur-sm">
+            {temple.category}
+          </span>
+        </div>
+      </div>
 
-          <div className="flex items-center gap-1.5 mb-2">
-            <svg className="w-3.5 h-3.5 text-orange-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-            </svg>
-            <span className="text-xs text-gray-500">{temple.location}</span>
+      {/* Content */}
+      <div className="p-5 flex flex-col flex-1 z-10 pointer-events-none">
+        <h3 className="font-bold text-gray-900 text-base mb-1 line-clamp-1 group-hover:text-orange-600 transition-colors">{temple.name}</h3>
+
+        <div className="flex items-center gap-1.5 mb-2">
+          <MapPin size={12} className="text-orange-400" />
+          <span className="text-xs text-gray-500 font-medium">{temple.location}</span>
+        </div>
+
+        <p className="text-xs text-gray-500 mb-4 leading-relaxed line-clamp-2 flex-1">{temple.description}</p>
+
+        <div className="flex items-center justify-between pt-4 border-t border-gray-100 mt-auto">
+          <div className="flex items-center gap-1">
+            <Star size={14} className="text-amber-400 fill-current" />
+            <span className="text-sm font-bold text-gray-900">{temple.rating}</span>
+            <span className="text-[10px] text-gray-400 font-medium">({temple.totalReviews?.toLocaleString()})</span>
           </div>
-
-          <p className="text-xs text-gray-500 mb-3 leading-relaxed line-clamp-2">{temple.description}</p>
-
-          <div className="flex items-center justify-between pt-3 border-t border-gray-100">
-            <div className="flex items-center gap-1">
-              <svg className="w-4 h-4 text-amber-400 fill-current" viewBox="0 0 20 20">
-                <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-              </svg>
-              <span className="text-sm font-bold text-gray-900">{temple.rating}</span>
-              <span className="text-xs text-gray-400">({temple.totalReviews?.toLocaleString()})</span>
-            </div>
-            <div className="flex items-center gap-1.5 text-orange-600">
-              <span className="text-xs font-semibold">{temple.pujasAvailable} Pujas Available</span>
-              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-              </svg>
-            </div>
+          <div className="flex items-center gap-1 text-orange-600 font-bold">
+            <span className="text-[10px] uppercase tracking-tighter">{temple.pujasAvailable} Pujas</span>
+            <ChevronRight size={14} />
           </div>
         </div>
       </div>
-    </Link>
+    </div>
   );
 }
 
@@ -157,27 +179,30 @@ function SkeletonCard() {
 }
 
 // ── Page Banner ───────────────────────────────────────────────────────────────
-function PageBanner() {
+function PageBanner({ bannerBg }: { bannerBg?: string }) {
   return (
     <section className="relative h-64 md:h-80 overflow-hidden">
-      <div className="absolute inset-0 bg-gradient-to-br from-[#2d0a00] to-[#1a0500]" />
-      <div
-        className="absolute inset-0 opacity-10"
-        style={{
-          backgroundImage:
-            "repeating-linear-gradient(60deg, transparent, transparent 20px, rgba(255,255,255,.1) 20px, rgba(255,255,255,.1) 21px)",
-        }}
-      />
-      <div className="absolute inset-0 bg-gradient-to-r from-black/50 to-transparent" />
+      {bannerBg ? (
+        <img
+          src={bannerBg}
+          alt="Banner"
+          className="absolute inset-0 w-full h-full object-cover"
+        />
+      ) : (
+        <div className="absolute inset-0 bg-gradient-to-br from-[#3d0a00] to-[#1a0500]" />
+      )}
+      <div className="absolute inset-0 bg-gradient-to-r from-[#1a0500]/90 via-[#2d0a00]/70 to-transparent" />
       <div className="relative z-10 h-full flex items-center">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full">
-          <p className="text-orange-300 text-xs font-semibold tracking-widest uppercase mb-3">
-            Sacred Pilgrimage Sites
+          <p className="text-orange-400 text-xs font-bold tracking-[0.2em] uppercase mb-4 flex items-center gap-2">
+            <span className="w-8 h-[1px] bg-orange-500"></span> Sacred Pilgrimage Sites
           </p>
-          <h1 className="text-3xl md:text-4xl font-bold text-white mb-3">Temples of India</h1>
-          <p className="text-white/80 text-base max-w-xl">
+          <h1 className="text-3xl md:text-5xl font-bold text-white mb-4">
+            Temples of India
+          </h1>
+          <p className="text-white/80 text-base max-w-xl leading-relaxed">
             Explore 500+ sacred temples from Jyotirlingas to Shaktipeeths. Book authentic pujas and
-            receive divine blessings from anywhere.
+            receive divine blessings from India's most powerful spiritual destinations.
           </p>
         </div>
       </div>
@@ -187,13 +212,38 @@ function PageBanner() {
 
 // ── Main Export ───────────────────────────────────────────────────────────────
 export default function TemplesPage() {
-  const [temples,          setTemples]          = useState<Temple[]>([]);
-  const [loading,          setLoading]          = useState(true);
-  const [error,            setError]            = useState("");
-  const [activeCategory,   setActiveCategory]   = useState("All Temples");
-  const [activeState,      setActiveState]      = useState("All States");
-  const [search,           setSearch]           = useState("");
+  const [temples, setTemples] = useState<Temple[]>([]);
+  const [favorites, setFavorites] = useState<string[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [activeCategory, setActiveCategory] = useState("All Temples");
+  const [activeState, setActiveState] = useState("All States");
+  const [search, setSearch] = useState("");
   const [showFeaturedOnly, setShowFeaturedOnly] = useState(false);
+  const [bannerBg, setBannerBg] = useState("");
+
+  // Fetch settings on mount
+  useEffect(() => {
+    async function fetchBanner() {
+      try {
+        const res = await getSettings("page_banners");
+        if (res && res.value && res.value.temples) {
+          setBannerBg(res.value.temples);
+        }
+      } catch (err) {
+        console.error("Failed to fetch banner settings:", err);
+      }
+    }
+    fetchBanner();
+
+    async function fetchFavorites() {
+      const res = await getUserTempleFavorites();
+      if (res.success && res.data) {
+        setFavorites(res.data);
+      }
+    }
+    fetchFavorites();
+  }, []);
 
   // Fetch temples from API
   useEffect(() => {
@@ -203,11 +253,11 @@ export default function TemplesPage() {
       try {
         const params = new URLSearchParams();
         if (activeCategory !== "All Temples") params.set("category", activeCategory);
-        if (activeState    !== "All States")  params.set("state",    activeState);
-        if (showFeaturedOnly)                 params.set("featured", "true");
-        if (search)                           params.set("search",   search);
+        if (activeState !== "All States") params.set("state", activeState);
+        if (showFeaturedOnly) params.set("featured", "true");
+        if (search) params.set("search", search);
 
-        const res  = await fetch(`/api/temples?${params.toString()}`);
+        const res = await fetch(`/api/temples?${params.toString()}`);
         const data = await res.json();
 
         if (data.success) {
@@ -222,16 +272,35 @@ export default function TemplesPage() {
       }
     };
 
-    // Debounce search input by 400ms
     const timer = setTimeout(fetchTemples, search ? 400 : 0);
     return () => clearTimeout(timer);
   }, [activeCategory, activeState, showFeaturedOnly, search]);
+
+  const handleToggleFavorite = async (id: string) => {
+    const res = await toggleTempleFavorite(id);
+    if (res.success) {
+      setFavorites(prev =>
+        res.isAdded ? [...prev, id] : prev.filter(fid => fid !== id)
+      );
+    } else {
+      alert(res.message || "Failed to toggle favorite");
+    }
+  };
+
+  // Sort temples: favorites first
+  const sortedTemples = [...temples].sort((a, b) => {
+    const aFav = favorites.includes(a._id);
+    const bFav = favorites.includes(b._id);
+    if (aFav && !bFav) return -1;
+    if (!aFav && bFav) return 1;
+    return 0;
+  });
 
   return (
     <>
       <Navbar />
       <main className="min-h-screen bg-gray-50 font-sans">
-        <PageBanner />
+        <PageBanner bannerBg={bannerBg} />
 
         {/* Filter Bar */}
         <div className="sticky top-0 z-20 bg-white border-b border-gray-200 shadow-sm">
@@ -241,11 +310,10 @@ export default function TemplesPage() {
                 <button
                   key={cat}
                   onClick={() => setActiveCategory(cat)}
-                  className={`shrink-0 px-4 py-1.5 rounded-full text-sm font-medium transition-all duration-200 whitespace-nowrap ${
-                    activeCategory === cat
+                  className={`shrink-0 px-4 py-1.5 rounded-full text-sm font-medium transition-all duration-200 whitespace-nowrap ${activeCategory === cat
                       ? "bg-orange-500 text-white shadow-md"
                       : "bg-gray-100 text-gray-600 hover:bg-gray-200"
-                  }`}
+                    }`}
                 >
                   {cat}
                 </button>
@@ -317,10 +385,15 @@ export default function TemplesPage() {
           )}
 
           {/* Temple Grid */}
-          {!loading && !error && temples.length > 0 && (
+          {!loading && !error && sortedTemples.length > 0 && (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-              {temples.map((temple) => (
-                <TempleCard key={temple._id} temple={temple} />
+              {sortedTemples.map((temple) => (
+                <TempleCard
+                  key={temple._id}
+                  temple={temple}
+                  isFavorite={favorites.includes(temple._id)}
+                  onToggle={handleToggleFavorite}
+                />
               ))}
             </div>
           )}

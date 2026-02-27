@@ -22,6 +22,7 @@ interface UserInfo {
   name: string;
   email: string;
   initials: string;
+  photo?: string;
 }
 
 export default function Navbar() {
@@ -52,7 +53,8 @@ export default function Navbar() {
             .join("")
             .toUpperCase()
             .slice(0, 2);
-          setUser({ name, email, initials });
+          const photo = userObj?.photo || "";
+          setUser({ name, email, initials, photo });
         } else {
           setUser(null);
         }
@@ -217,9 +219,13 @@ export default function Navbar() {
                     onClick={() => setProfileOpen((v) => !v)}
                     className="flex items-center gap-2.5 px-3 py-1.5 rounded-xl border-2 border-orange-100 hover:border-orange-300 hover:bg-orange-50 transition-all duration-200 group"
                   >
-                    <div className="w-8 h-8 rounded-full bg-gradient-to-br from-orange-500 to-rose-600 flex items-center justify-center text-white text-xs font-bold shadow-sm">
-                      {user!.initials}
-                    </div>
+                    {user?.photo ? (
+                      <img src={user.photo} className="w-8 h-8 rounded-full object-cover shadow-sm" alt={user.name} />
+                    ) : (
+                      <div className="w-8 h-8 rounded-full bg-gradient-to-br from-orange-500 to-rose-600 flex items-center justify-center text-white text-xs font-bold shadow-sm">
+                        {user!.initials}
+                      </div>
+                    )}
                     <div className="text-left hidden sm:block">
                       <p className="text-xs font-bold text-[#1a0500] leading-none">{user!.name.split(" ")[0]}</p>
                       <p className="text-[10px] text-gray-400 leading-none mt-0.5">My Account</p>
@@ -235,9 +241,13 @@ export default function Navbar() {
                       {/* User header */}
                       <div className="bg-gradient-to-br from-orange-50 to-amber-50 px-5 py-4 border-b border-orange-100">
                         <div className="flex items-center gap-3">
-                          <div className="w-12 h-12 rounded-full bg-gradient-to-br from-orange-500 to-rose-600 flex items-center justify-center text-white font-bold text-base shadow-md">
-                            {user!.initials}
-                          </div>
+                          {user?.photo ? (
+                            <img src={user.photo} className="w-12 h-12 rounded-full object-cover shadow-md" alt={user.name} />
+                          ) : (
+                            <div className="w-12 h-12 rounded-full bg-gradient-to-br from-orange-500 to-rose-600 flex items-center justify-center text-white font-bold text-base shadow-md">
+                              {user!.initials}
+                            </div>
+                          )}
                           <div>
                             <p className="font-bold text-[#1a0500] text-sm">{user!.name}</p>
                             <p className="text-xs text-gray-500">{user!.email}</p>

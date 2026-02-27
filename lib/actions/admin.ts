@@ -9,7 +9,9 @@ import Pandit from "../../models/Pandit";
 import Order from "../../models/Order";
 import User from "../../models/User";
 import Settings from "../../models/Settings";
+import Payout from "../../models/Payout"; // Import Payout model
 import { sendWhatsApp } from "../whatsapp";
+import mongoose from "mongoose";
 
 // =======================
 // DASHBOARD STATS
@@ -291,7 +293,7 @@ export async function assignPanditToOrder(orderId: string, panditId: string) {
         await connectDB();
         const order = await Order.findByIdAndUpdate(
             orderId,
-            { panditId, orderStatus: "confirmed" },
+            { panditId, orderStatus: "assigned" },
             { returnDocument: 'after' }
         ).populate("panditId", "name").populate("poojaId", "name");
 
@@ -336,6 +338,150 @@ export async function updateOrderVideo(orderId: string, videoUrl: string) {
         revalidatePath("/admin/orders");
         return { success: true, order: JSON.parse(JSON.stringify(order)) };
     } catch (error: any) {
+        return { success: false, error: error.message };
+    }
+}
+
+// =======================
+// PAYMENT & FINANCE ACTIONS
+// =======================
+export async function getTransactionsAdmin() {
+    await connectDB();
+    try {
+        const transactions = await Order.find({ paymentStatus: "paid" })
+            .populate("userId", "name email")
+            .populate("poojaId", "name")
+            .populate("templeId", "name")
+            .sort({ createdAt: -1 })
+            .lean();
+        return JSON.parse(JSON.stringify(transactions));
+    } catch (error: any) {
+        console.error("getTransactionsAdmin error:", error);
+        return [];
+    }
+}
+
+export async function getPayoutsAdmin() {
+    await connectDB();
+    try {
+        const Payout = mongoose.models.Payout || mongoose.model("Payout");
+        const payouts = await Payout.find()
+            .populate("panditId", "name")
+            .sort({ createdAt: -1 })
+            .lean();
+        return JSON.parse(JSON.stringify(payouts));
+    } catch (error: any) {
+        console.error("getPayoutsAdmin error:", error);
+        return [];
+    }
+}
+
+export async function updatePayoutStatus(id: string, status: string) {
+    try {
+        await connectDB();
+        const Payout = mongoose.models.Payout || mongoose.model("Payout");
+        const payout = await Payout.findByIdAndUpdate(
+            id,
+            { status, processedAt: status === "paid" ? new Date() : null },
+            { new: true }
+        );
+        revalidatePath("/admin/payments/payouts");
+        return { success: true, payout: JSON.parse(JSON.stringify(payout)) };
+    } catch (error: any) {
+        return { success: false, error: error.message };
+    }
+}
+
+// =======================
+// ANALYTICS ACTIONS
+// =======================
+export async function getAnalyticsData() {
+    await connectDB();
+    try {
+        // Daily Revenue for last 30 days
+        const thirtyDaysAgo = new Date();
+        thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+
+        const revenueData = await Order.aggregate([
+            { $match: { paymentStatus: "paid", createdAt: { $gte: thirtyDaysAgo } } },
+            {
+                $group: {
+                    _id: { $dateToString: { format: "%Y-%m-%d", date: "$createdAt" } },
+                    revenue: { $sum: "$totalAmount" },
+                    orders: { $sum: 1 }
+                }
+            },
+            { $sort: { "_id": 1 } }
+        ]);
+
+        // Top Temples
+        const topTemples = await Order.aggregate([
+            { $match: { paymentStatus: "paid" } },
+            {
+                $group: {
+                    _id: "$templeId",
+                    revenue: { $sum: "$totalAmount" },
+                    count: { $sum: 1 }
+                }
+            },
+            { $sort: { revenue: -1 } },
+            { $limit: 5 },
+            {
+                $lookup: {
+                    from: "temples",
+                    localField: "_id",
+                    foreignField: "_id",
+                    as: "temple"
+                }
+            },
+            { $unwind: "$temple" },
+            {
+                $project: {
+                    name: "$temple.name",
+                    revenue: 1,
+                    count: 1
+                }
+            }
+        ]);
+
+        // Top Poojas
+        const topPoojas = await Order.aggregate([
+            { $match: { paymentStatus: "paid" } },
+            {
+                $group: {
+                    _id: "$poojaId",
+                    revenue: { $sum: "$totalAmount" },
+                    count: { $sum: 1 }
+                }
+            },
+            { $sort: { revenue: -1 } },
+            { $limit: 5 },
+            {
+                $lookup: {
+                    from: "poojas",
+                    localField: "_id",
+                    foreignField: "_id",
+                    as: "pooja"
+                }
+            },
+            { $unwind: "$pooja" },
+            {
+                $project: {
+                    name: "$pooja.name",
+                    revenue: 1,
+                    count: 1
+                }
+            }
+        ]);
+
+        return {
+            success: true,
+            revenueData,
+            topTemples,
+            topPoojas
+        };
+    } catch (error: any) {
+        console.error("getAnalyticsData error:", error);
         return { success: false, error: error.message };
     }
 }

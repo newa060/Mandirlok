@@ -4,8 +4,10 @@ import { cookies } from "next/headers";
 import { verifyToken } from "@/lib/jwt";
 import { connectDB } from "@/lib/db";
 import Order from "@/models/Order";
+import Notification from "@/models/Notification";
 import Pooja from "@/models/Pooja";
 import Chadhava from "@/models/Chadhava";
+import Pandit from "@/models/Pandit";
 import { sendWhatsApp } from "@/lib/whatsapp";
 
 export async function POST(req: Request) {
@@ -38,7 +40,7 @@ export async function POST(req: Request) {
       templeId,
       bookingDate,
       qty = 1,
-      chadhavaIds = [],
+      chadhavaItems: incomingChadhavaItems = [], // incoming from payload
       sankalpName,
       gotra,
       dob,
@@ -46,6 +48,8 @@ export async function POST(req: Request) {
       whatsapp,
       sankalp,
       address,
+      isDonation,
+      extraDonation,
     } = body;
 
     // 2. Verify Razorpay signature
@@ -61,37 +65,42 @@ export async function POST(req: Request) {
       );
     }
 
-    // 3. Fetch pooja and chadhava details for storing in order
-    const pooja = await Pooja.findById(poojaId);
-    if (!pooja) {
-      return NextResponse.json(
-        { success: false, message: "Pooja not found" },
-        { status: 404 }
-      );
+    // 3. Fetch pooja (if provided) and chadhava details
+    let poojaAmount = 0;
+    let poojaName = isDonation ? "Sacred Support" : "Sacred Offering";
+
+    if (poojaId) {
+      const pooja = await Pooja.findById(poojaId);
+      if (!pooja) {
+        return NextResponse.json(
+          { success: false, message: "Pooja not found" },
+          { status: 404 }
+        );
+      }
+      poojaAmount = pooja.price * qty;
+      poojaName = pooja.name;
     }
 
-    // Build chadhava items array
-    let chadhavaItems: { chadhavaId: string; name: string; price: number; emoji: string }[] = [];
+    // Build chadhava items array for DB
+    let chadhavaItems: { chadhavaId: string; name: string; price: number; emoji: string; quantity: number }[] = [];
     let chadhavaAmount = 0;
 
-    if (chadhavaIds.length > 0) {
-      const chadhavaList = await Chadhava.find({ _id: { $in: chadhavaIds } });
-      chadhavaItems = chadhavaList.map((c) => ({
-        chadhavaId: c._id.toString(),
-        name: c.name,
-        price: c.price,
-        emoji: c.emoji,
+    if (incomingChadhavaItems.length > 0) {
+      chadhavaItems = incomingChadhavaItems.map((item: any) => ({
+        chadhavaId: item.chadhavaId,
+        name: item.name,
+        price: item.price,
+        emoji: item.emoji,
+        quantity: item.quantity || 1
       }));
-      chadhavaAmount = chadhavaList.reduce((sum, c) => sum + c.price, 0);
+      chadhavaAmount = chadhavaItems.reduce((sum, c) => sum + (c.price * c.quantity), 0);
     }
 
-    const poojaAmount = pooja.price * qty;
-    const totalAmount = poojaAmount + chadhavaAmount;
+    const totalAmount = poojaAmount + chadhavaAmount + (extraDonation || 0);
 
     // 4. Save order to DB
-    const order = await Order.create({
+    const orderObj: any = {
       userId: decoded.userId,
-      poojaId,
       templeId,
       bookingDate: new Date(bookingDate),
       sankalpName,
@@ -110,15 +119,95 @@ export async function POST(req: Request) {
       razorpayOrderId,
       razorpayPaymentId,
       razorpaySignature,
-      orderStatus: "pending",
-    });
+      orderStatus: isDonation ? "completed" : "pending",
+      isDonation: !!isDonation,
+      extraDonation: extraDonation || 0,
+    };
 
-    // 5. Send WhatsApp confirmation
+    if (poojaId) {
+      orderObj.poojaId = poojaId;
+    }
+
+    const order = await Order.create(orderObj);
+
+    // Create In-app Notification for payment
     try {
-      await sendWhatsApp(
-        whatsapp,
-        `🙏 *Jai Shri Ram!*\n\nYour booking is confirmed on *Mandirlok*.\n\n📋 *Booking ID:* ${order.bookingId}\n📿 *Pooja:* ${pooja.name}\n📅 *Date:* ${new Date(bookingDate).toLocaleDateString("en-IN", { day: "numeric", month: "long", year: "numeric" })}\n💰 *Amount Paid:* ₹${totalAmount}\n\nA pandit will be assigned shortly. You will receive another WhatsApp update.\n\n🛕 *Mandirlok — Divine Blessings Delivered*`
-      );
+      await Notification.create({
+        userId: decoded.userId,
+        title: isDonation ? "Donation Successful! 🙏" : "Booking Confirmed! 📿",
+        message: isDonation
+          ? `Thank you for your generous contribution of ₹${totalAmount} towards ${poojaName}.`
+          : `Your booking for ${poojaName} has been confirmed. Booking ID: ${order.bookingId}`,
+        type: "booking",
+        link: `/dashboard`
+      });
+    } catch (notifError) {
+      console.error("Failed to create in-app notification (payment):", notifError);
+    }
+
+    // 5. Auto-assign Pandit (Only if NOT a donation)
+    if (!isDonation) {
+      try {
+        const assignedPandit = await Pandit.findOne({
+          assignedTemples: templeId,
+          isActive: true
+        });
+
+        if (assignedPandit) {
+          await Order.findByIdAndUpdate(order._id, {
+            panditId: assignedPandit._id,
+            orderStatus: "confirmed"
+          });
+
+          // Notify devotee about pandit assignment
+          try {
+            await sendWhatsApp(
+              whatsapp,
+              `🙏 *Update on your Mandirlok Booking*\n\nYour *${poojaName}* has been assigned to:\n👤 *Pandit ${assignedPandit.name}*\n📱 ${assignedPandit.phone}\n\n📋 Booking ID: ${order.bookingId}\n📅 Date: ${new Date(bookingDate).toLocaleDateString("en-IN")}\n\n*Your pooja will be performed as scheduled. Stay blessed!* 🛕`
+            );
+          } catch (e) {
+            console.error("[WhatsApp auto-assign - devotee notification failed]", e);
+          }
+
+          // Notify pandit
+          try {
+            await sendWhatsApp(
+              assignedPandit.whatsapp,
+              `🛕 *New Pooja Assigned — Mandirlok*\n\n📿 *Pooja:* ${poojaName}\n👤 *Devotee:* ${sankalpName}\n📅 *Date:* ${new Date(bookingDate).toLocaleDateString("en-IN")}\n📋 *Booking ID:* ${order.bookingId}\n\nPlease log in to your Pandit Portal to view full details.`
+            );
+          } catch (e) {
+            console.error("[WhatsApp auto-assign - pandit notification failed]", e);
+          }
+
+          // Create In-app Notification for Pandit Assignment
+          try {
+            await Notification.create({
+              userId: decoded.userId,
+              title: "Pandit Assigned! 🧘",
+              message: `Pandit ${assignedPandit.name} has been assigned to your ${poojaName}.`,
+              type: "booking",
+              link: `/bookings/${order._id}`
+            });
+          } catch (notifError) {
+            console.error("Failed to create in-app notification (pandit assign):", notifError);
+          }
+        }
+      } catch (e) {
+        console.error("[Pandit auto-assignment failed]", e);
+      }
+    }
+
+    // 6. Send WhatsApp confirmation (Initial)
+    try {
+      let message = "";
+      if (isDonation) {
+        const offeringText = poojaId ? poojaName : "Temple Maintenance Support";
+        message = `🙏 *Jai Shri Ram!*\n\nThank you for your generous contribution to *Mandirlok*.\n\n📋 *Order ID:* ${order.bookingId}\n📿 *Offering:* ${offeringText}\n💰 *Amount:* ₹${totalAmount}\n📜 *Certificate:* You can view your donation certificate on our website.\n\n*Your contribution helps in the divine service of the temple. Stay blessed!* 🛕`;
+      } else {
+        message = `🙏 *Jai Shri Ram!*\n\nYour booking is confirmed on *Mandirlok*.\n\n📋 *Booking ID:* ${order.bookingId}\n📿 *Pooja:* ${poojaName}\n📅 *Date:* ${new Date(bookingDate).toLocaleDateString("en-IN", { day: "numeric", month: "long", year: "numeric" })}\n💰 *Amount Paid:* ₹${totalAmount}\n\nA pandit will be assigned shortly. You will receive another WhatsApp update.\n\n🛕 *Mandirlok — Divine Blessings Delivered*`;
+      }
+
+      await sendWhatsApp(whatsapp, message);
     } catch (e) {
       console.error("[WhatsApp booking confirmation failed]", e);
     }

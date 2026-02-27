@@ -2,7 +2,8 @@ import mongoose, { Schema, Document, Model, Types } from "mongoose";
 
 export type OrderStatus =
   | "pending"       // payment done, pandit not assigned yet
-  | "confirmed"     // pandit assigned
+  | "assigned"      // admin assigned pandit, but pandit not accepted yet
+  | "confirmed"     // pandit accepted the booking
   | "in-progress"   // pandit started pooja
   | "completed"     // pooja done, video uploaded
   | "cancelled"     // cancelled by user or admin
@@ -14,12 +15,13 @@ export interface IOrderChadhava {
   name: string;
   price: number;
   emoji: string;
+  quantity: number;
 }
 
 export interface IOrder extends Document {
   // References
   userId: Types.ObjectId;
-  poojaId: Types.ObjectId;
+  poojaId?: Types.ObjectId;
   templeId: Types.ObjectId;
   panditId?: Types.ObjectId;
 
@@ -43,6 +45,7 @@ export interface IOrder extends Document {
   // Pricing
   poojaAmount: number;
   chadhavaAmount: number;
+  extraDonation: number;
   totalAmount: number;
 
   // Payment
@@ -53,6 +56,7 @@ export interface IOrder extends Document {
 
   // Order tracking
   orderStatus: OrderStatus;
+  isDonation: boolean;
   videoUrl?: string;         // AWS S3 URL after pandit uploads
   videoSentAt?: Date;
 
@@ -67,6 +71,7 @@ const OrderChadhavaSchema = new Schema(
     name: String,
     price: Number,
     emoji: String,
+    quantity: { type: Number, default: 1 },
   },
   { _id: false }
 );
@@ -74,7 +79,7 @@ const OrderChadhavaSchema = new Schema(
 const OrderSchema = new Schema<IOrder>(
   {
     userId: { type: Schema.Types.ObjectId, ref: "User", required: true },
-    poojaId: { type: Schema.Types.ObjectId, ref: "Pooja", required: true },
+    poojaId: { type: Schema.Types.ObjectId, ref: "Pooja", required: false, default: null },
     templeId: { type: Schema.Types.ObjectId, ref: "Temple", required: true },
     panditId: { type: Schema.Types.ObjectId, ref: "Pandit", default: null },
 
@@ -94,6 +99,7 @@ const OrderSchema = new Schema<IOrder>(
 
     poojaAmount: { type: Number, required: true },
     chadhavaAmount: { type: Number, default: 0 },
+    extraDonation: { type: Number, default: 0 },
     totalAmount: { type: Number, required: true },
 
     paymentStatus: {
@@ -107,9 +113,10 @@ const OrderSchema = new Schema<IOrder>(
 
     orderStatus: {
       type: String,
-      enum: ["pending", "confirmed", "in-progress", "completed", "cancelled"],
+      enum: ["pending", "assigned", "confirmed", "in-progress", "completed", "cancelled"],
       default: "pending",
     },
+    isDonation: { type: Boolean, default: false },
 
     videoUrl: { type: String, default: "" },
     videoSentAt: { type: Date, default: null },
@@ -128,7 +135,11 @@ OrderSchema.pre("save", async function () {
   }
 });
 
-const Order: Model<IOrder> =
-  mongoose.models.Order || mongoose.model<IOrder>("Order", OrderSchema);
+// Force re-registration in development to pick up schema changes
+if (mongoose.models.Order) {
+  delete mongoose.models.Order;
+}
+
+const Order: Model<IOrder> = mongoose.model<IOrder>("Order", OrderSchema);
 
 export default Order;

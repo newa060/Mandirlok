@@ -28,10 +28,11 @@ interface Order {
   whatsapp: string;
   poojaAmount: number;
   chadhavaAmount: number;
+  extraDonation: number;
   totalAmount: number;
   qty: number;
   sankalp: string;
-  chadhavaItems: { name: string; emoji: string; price: number }[];
+  chadhavaItems: { name: string; emoji: string; price: number; quantity: number }[];
   createdAt: string;
   poojaId: {
     name: string;
@@ -44,6 +45,7 @@ interface Order {
     city: string;
     state: string;
   };
+  isDonation: boolean;
 }
 
 function BookingSuccessContent() {
@@ -91,6 +93,194 @@ function BookingSuccessContent() {
     } else {
       navigator.clipboard.writeText(text);
       alert("Booking details copied to clipboard!");
+    }
+  };
+
+  const handleDownloadCertificate = () => {
+    if (!order) return;
+
+    const certificateHTML = `
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Donation Certificate — ${order.bookingId}</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700;900&family=Great+Vibes&family=Inter:wght@400;600&display=swap');
+    
+    body { 
+      margin: 0; 
+      padding: 40px; 
+      background: #fdfdfd; 
+      font-family: 'Inter', sans-serif;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+    }
+
+    .certificate {
+      width: 800px;
+      height: 580px;
+      background: white;
+      border: 20px solid #c5a059;
+      position: relative;
+      padding: 40px;
+      box-shadow: 0 0 50px rgba(0,0,0,0.1);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      box-sizing: border-box;
+    }
+
+    .certificate::before {
+      content: "";
+      position: absolute;
+      top: 5px; left: 5px; right: 5px; bottom: 5px;
+      border: 2px solid #c5a059;
+      pointer-events: none;
+    }
+
+    .corner {
+      position: absolute;
+      width: 80px;
+      height: 80px;
+      border: 4px solid #c5a059;
+    }
+
+    .tl { top: -10px; left: -10px; border-right: none; border-bottom: none; }
+    .tr { top: -10px; right: -10px; border-left: none; border-bottom: none; }
+    .bl { bottom: -10px; left: -10px; border-right: none; border-top: none; }
+    .br { bottom: -10px; right: -10px; border-left: none; border-top: none; }
+
+    .logo {
+      font-family: 'Cinzel', serif;
+      font-size: 32px;
+      font-weight: 900;
+      color: #b45309;
+      margin-bottom: 30px;
+      letter-spacing: 4px;
+    }
+
+    .title {
+      font-family: 'Cinzel', serif;
+      font-size: 42px;
+      font-weight: 700;
+      color: #1a1a1a;
+      margin-bottom: 10px;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+    }
+
+    .subtitle {
+      font-size: 16px;
+      color: #666;
+      margin-bottom: 40px;
+      letter-spacing: 1px;
+    }
+
+    .content {
+      font-size: 18px;
+      color: #333;
+      line-height: 1.6;
+      margin-bottom: 30px;
+    }
+
+    .name {
+      font-family: 'Great Vibes', cursive;
+      font-size: 48px;
+      color: #b45309;
+      margin: 10px 0 30px 0;
+      border-bottom: 1px solid #ddd;
+      display: inline-block;
+      min-width: 300px;
+    }
+
+    .details {
+      display: flex;
+      justify-content: space-between;
+      width: 100%;
+      margin-top: auto;
+      border-top: 1px solid #eee;
+      padding-top: 20px;
+      font-size: 12px;
+      color: #888;
+    }
+
+    .stamp {
+      position: absolute;
+      bottom: 60px;
+      right: 60px;
+      width: 100px;
+      height: 100px;
+      border: 4px double #b45309;
+      border-radius: 50%;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      color: #b45309;
+      font-weight: 800;
+      font-size: 10px;
+      transform: rotate(-15deg);
+      opacity: 0.6;
+    }
+
+    @media print {
+      body { padding: 0; background: white; }
+      .certificate { box-shadow: none; width: 100%; border-width: 15px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="certificate">
+    <div class="corner tl"></div><div class="corner tr"></div>
+    <div class="corner bl"></div><div class="corner br"></div>
+    
+    <div class="logo">🛕 MANDIRLOK</div>
+    
+    <div class="title">Certificate of Devotion</div>
+    <div class="subtitle">CERTIFICATE OF MERITORIOUS DONATION</div>
+    
+    <div class="content">
+      This certificate is proudly presented to
+    </div>
+    
+    <div class="name">${order.sankalpName}</div>
+    
+    <div class="content">
+      For their generous donation of <strong>₹${order.totalAmount.toLocaleString()}</strong> towards<br/>
+      <strong>${order.poojaId?.name || "Sacred Offering"}</strong> at <strong>${order.templeId?.name}</strong>.<br/>
+      Your contribution supports the divine service and maintenance of the sacred temple.
+    </div>
+
+    <div class="stamp">
+      <span>MANDIRLOK</span>
+      <span>OFFICIAL</span>
+      <span>SEAL</span>
+    </div>
+    
+    <div class="details">
+      <div>REGISTRATION ID: ${order.bookingId}</div>
+      <div>DATE: ${new Date(order.createdAt).toLocaleDateString("en-IN", { day: '2-digit', month: 'long', year: 'numeric' })}</div>
+      <div>VERIFIED BY: MANDIRLOK SEVA TRUST</div>
+    </div>
+  </div>
+  <script>
+    window.onload = () => {
+      setTimeout(() => {
+        window.print();
+      }, 500);
+    };
+  </script>
+</body>
+</html>`;
+
+    const printWindow = window.open("", "_blank");
+    if (printWindow) {
+      printWindow.document.write(certificateHTML);
+      printWindow.document.close();
     }
   };
 
@@ -144,11 +334,10 @@ function BookingSuccessContent() {
         <div class="id">${order.bookingId}</div>
       </div>
 
-      <div class="section">
-        <div class="section-title">Pooja Details</div>
+        <div class="section-title">${order.poojaId ? "Pooja Details" : "Donation Details"}</div>
         <div class="row">
-          <span class="key">Pooja</span>
-          <span class="val">${order.poojaId?.emoji || "🪔"} ${order.poojaId?.name || "—"}</span>
+          <span class="key">${order.poojaId ? "Pooja" : "Seva"}</span>
+          <span class="val">${order.poojaId?.emoji || "🙏"} ${order.poojaId?.name || "Sacred Temple Support"}</span>
         </div>
         <div class="row">
           <span class="key">Temple</span>
@@ -206,8 +395,8 @@ function BookingSuccessContent() {
             (item) => `
           <div class="chadhava-item">
             <span>${item.emoji}</span>
-            <span style="flex:1">${item.name}</span>
-            <span style="font-weight:600">₹${item.price}</span>
+            <span style="flex:1">${item.name} ${item.quantity > 1 ? `(x${item.quantity})` : ""}</span>
+            <span style="font-weight:600">₹${(item.price * (item.quantity || 1)).toLocaleString()}</span>
           </div>
         `,
           )
@@ -230,6 +419,14 @@ function BookingSuccessContent() {
         </div>`
         : ""
       }
+        ${order.extraDonation > 0
+        ? `
+        <div class="price-row">
+          <span style="color:#6b7280">Additional Donation</span>
+          <span>₹${order.extraDonation.toLocaleString("en-IN")}</span>
+        </div>`
+        : ""
+      }
         <div class="total-row">
           <span>Total Paid</span>
           <span>₹${order.totalAmount.toLocaleString("en-IN")}</span>
@@ -240,7 +437,7 @@ function BookingSuccessContent() {
       </div>
 
       <div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:10px;padding:14px 16px;font-size:13px;color:#1e40af;line-height:1.7">
-        📱 <strong>Next steps:</strong> Your pandit will be assigned shortly. You will receive pooja video and confirmation on your WhatsApp number <strong>+${order.whatsapp}</strong> after the pooja is completed.
+        📱 <strong>Next steps:</strong> ${order.isDonation ? `Your contribution has been received by *${order.templeId?.name}*. You can now download your certificate of devotion.` : `Your pandit will be assigned shortly. You will receive pooja video and confirmation on your WhatsApp number <strong>+${order.whatsapp}</strong> after the pooja is completed.`}
       </div>
 
     </div>
@@ -308,8 +505,10 @@ function BookingSuccessContent() {
             Booking Confirmed! 🙏
           </h1>
           <p className="text-gray-500 text-sm mt-2 max-w-xs mx-auto">
-            Your pooja has been booked. Video will be sent to your WhatsApp
-            after the pooja.
+            {order.isDonation
+              ? "Your contribution has been received. You can now download your donation certificate below."
+              : "Your pooja has been booked. Video will be sent to your WhatsApp after the pooja."
+            }
           </p>
         </div>
 
@@ -339,15 +538,15 @@ function BookingSuccessContent() {
           {/* Pooja info */}
           <div className="p-5 border-b border-gray-50">
             <p className="text-xs text-gray-400 font-semibold uppercase tracking-wider mb-3">
-              Pooja Details
+              {order.poojaId ? "Pooja Details" : "Donation Details"}
             </p>
             <div className="flex items-start gap-3">
               <div className="w-12 h-12 bg-orange-50 rounded-xl flex items-center justify-center text-2xl shrink-0">
-                {order.poojaId?.emoji || "🪔"}
+                {order.poojaId?.emoji || "🙏"}
               </div>
               <div className="flex-1 min-w-0">
                 <h3 className="font-bold text-gray-900">
-                  {order.poojaId?.name}
+                  {order.poojaId?.name || "Sacred Temple Support"}
                 </h3>
                 <p className="text-gray-500 text-xs flex items-center gap-1 mt-0.5">
                   <MapPin size={11} />
@@ -360,7 +559,7 @@ function BookingSuccessContent() {
               {[
                 {
                   icon: <Calendar size={13} className="text-orange-400" />,
-                  label: "Pooja Date",
+                  label: order.poojaId ? "Pooja Date" : "Donation Date",
                   value: new Date(order.bookingDate).toLocaleDateString(
                     "en-IN",
                     { day: "numeric", month: "long", year: "numeric" },
@@ -368,8 +567,8 @@ function BookingSuccessContent() {
                 },
                 {
                   icon: <Clock size={13} className="text-orange-400" />,
-                  label: "Duration",
-                  value: order.poojaId?.duration || "—",
+                  label: "Contribution",
+                  value: order.poojaId ? order.poojaId.duration : "Temple Maintenance",
                 },
                 {
                   icon: <Phone size={13} className="text-orange-400" />,
@@ -411,9 +610,14 @@ function BookingSuccessContent() {
                   >
                     <span>
                       {item.emoji} {item.name}
+                      {item.quantity > 1 && (
+                        <span className="ml-1.5 text-[10px] bg-amber-50 text-amber-600 px-1.5 py-0.5 rounded-md font-bold ring-1 ring-amber-100">
+                          x{item.quantity}
+                        </span>
+                      )}
                     </span>
                     <span className="font-semibold text-gray-700">
-                      ₹{item.price}
+                      ₹{(item.price * (item.quantity || 1)).toLocaleString()}
                     </span>
                   </div>
                 ))}
@@ -421,22 +625,32 @@ function BookingSuccessContent() {
             </div>
           )}
 
-          {/* Payment summary */}
           <div className="p-5">
             <p className="text-xs text-gray-400 font-semibold uppercase tracking-wider mb-3">
               Payment Summary
             </p>
             <div className="space-y-2 text-sm">
-              <div className="flex justify-between">
-                <span className="text-gray-500">Pooja Amount</span>
-                <span>₹{order.poojaAmount.toLocaleString("en-IN")}</span>
-              </div>
-              {order.chadhavaAmount > 0 && (
+              {order.poojaAmount > 0 && (
                 <div className="flex justify-between">
-                  <span className="text-gray-500">Chadhava</span>
+                  <span className="text-gray-500">Pooja Amount</span>
+                  <span>₹{order.poojaAmount.toLocaleString("en-IN")}</span>
+                </div>
+              )}
+
+              {order.chadhavaAmount > 0 && (
+                <div className="flex justify-between text-gray-500">
+                  <span>Chadhava</span>
                   <span>₹{order.chadhavaAmount.toLocaleString("en-IN")}</span>
                 </div>
               )}
+
+              {order.extraDonation > 0 && (
+                <div className="flex justify-between text-amber-600 font-bold">
+                  <span>Additional Donation</span>
+                  <span>₹{order.extraDonation.toLocaleString("en-IN")}</span>
+                </div>
+              )}
+
               <div className="flex justify-between font-bold text-base pt-2 border-t border-gray-100">
                 <span>Total Paid</span>
                 <span className="text-orange-500">
@@ -444,38 +658,57 @@ function BookingSuccessContent() {
                 </span>
               </div>
             </div>
-            <div className="mt-3 inline-flex items-center gap-1.5 bg-green-50 text-green-600 text-xs font-semibold px-3 py-1.5 rounded-full">
-              <CheckCircle2 size={12} />
-              Payment Successful
-            </div>
+          </div>
+          <div className="mt-3 inline-flex items-center gap-1.5 bg-green-50 text-green-600 text-xs font-semibold px-3 py-1.5 rounded-full">
+            <CheckCircle2 size={12} />
+            Payment Successful
           </div>
         </div>
 
-        {/* WhatsApp notice */}
-        <div className="bg-blue-50 border border-blue-100 rounded-xl p-4 mb-6 text-sm text-blue-700">
+        {/* Next steps notice */}
+        <div className={`rounded-xl p-4 mb-6 text-sm ${order.isDonation ? 'bg-amber-50 border border-amber-100 text-amber-900' : 'bg-blue-50 border border-blue-100 text-blue-700'}`}>
           <strong>📱 What happens next?</strong>
-          <ul className="mt-1.5 space-y-1 text-xs leading-relaxed list-disc list-inside text-blue-600">
-            <li>A pandit will be assigned to your pooja</li>
-            <li>You'll receive a WhatsApp update at +{order.whatsapp}</li>
-            <li>Pooja video will be sent after completion</li>
+          <ul className={`mt-1.5 space-y-1 text-xs leading-relaxed list-disc list-inside ${order.isDonation ? 'text-amber-800' : 'text-blue-600'}`}>
+            {order.isDonation ? (
+              <>
+                <li>Your donation is directly credited to the temple</li>
+                <li>Download your digital certificate for your records</li>
+                <li>Stay blessed for your meritorious contribution</li>
+              </>
+            ) : (
+              <>
+                <li>A pandit will be assigned to your pooja</li>
+                <li>You'll receive a WhatsApp update at +{order.whatsapp}</li>
+                <li>Pooja video will be sent after completion</li>
+              </>
+            )}
           </ul>
         </div>
 
         {/* Action buttons */}
         <div className="grid grid-cols-2 gap-3 mb-4">
           <button
-            onClick={handleDownloadReceipt}
-            className="flex items-center justify-center gap-2 bg-white border border-gray-200 text-gray-700 font-semibold text-sm py-3 rounded-xl hover:border-orange-300 hover:text-orange-500 transition"
+            onClick={order.isDonation ? handleDownloadCertificate : handleDownloadReceipt}
+            className={`flex items-center justify-center gap-2 bg-white border font-semibold text-sm py-3 rounded-xl transition ${order.isDonation ? 'border-amber-200 text-amber-700 hover:bg-amber-50' : 'border-gray-200 text-gray-700 hover:border-orange-300 hover:text-orange-500'}`}
           >
-            <Download size={16} />
-            Download Receipt
+            {order.isDonation ? (
+              <>
+                <Download size={16} />
+                Get Certificate
+              </>
+            ) : (
+              <>
+                <Download size={16} />
+                Download Receipt
+              </>
+            )}
           </button>
           <button
             onClick={handleShare}
             className="flex items-center justify-center gap-2 bg-white border border-gray-200 text-gray-700 font-semibold text-sm py-3 rounded-xl hover:border-orange-300 hover:text-orange-500 transition"
           >
             <Share2 size={16} />
-            Share Booking
+            Share {order.isDonation ? 'Donation' : 'Booking'}
           </button>
         </div>
 
@@ -495,7 +728,7 @@ function BookingSuccessContent() {
           </Link>
         </div>
       </div>
-    </main>
+    </main >
   );
 }
 

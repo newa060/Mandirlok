@@ -60,6 +60,18 @@ export default function PanditOrdersPage() {
     if (res.ok) fetchData()
   }
 
+  const acceptOrder = async (id: string) => {
+    const res = await fetch(`/api/pandit/orders/${id}/accept`, { method: 'POST' })
+    if (res.ok) fetchData()
+  }
+
+  const declineOrder = async (id: string) => {
+    if (confirm('Are you sure you want to decline this pooja?')) {
+      const res = await fetch(`/api/pandit/orders/${id}/decline`, { method: 'POST' })
+      if (res.ok) fetchData()
+    }
+  }
+
   const tabs = [
     { id: 'today', label: "Today's", icon: <Calendar size={14} /> },
     { id: 'upcoming', label: 'Upcoming', icon: <Clock size={14} /> },
@@ -131,8 +143,9 @@ export default function PanditOrdersPage() {
                       <div className="mt-0 md:mt-4">
                         <span className={`px-3 py-1 rounded-full text-[9px] font-bold uppercase tracking-wider border ${order.orderStatus === 'completed' ? 'bg-green-50 text-green-600 border-green-100' :
                           order.orderStatus === 'in-progress' ? 'bg-blue-50 text-blue-600 border-blue-100' :
-                            order.orderStatus === 'cancelled' ? 'bg-red-50 text-red-600 border-red-100' :
-                              'bg-orange-50 text-orange-600 border-orange-100'
+                            order.orderStatus === 'assigned' ? 'bg-purple-50 text-purple-600 border-purple-100' :
+                              order.orderStatus === 'cancelled' ? 'bg-red-50 text-red-600 border-red-100' :
+                                'bg-orange-50 text-orange-600 border-orange-100'
                           }`}>
                           {order.orderStatus}
                         </span>
@@ -183,6 +196,22 @@ export default function PanditOrdersPage() {
                         </Link>
 
                         <div className="flex gap-2">
+                          {order.orderStatus === 'assigned' && (
+                            <div className="flex gap-2">
+                              <button
+                                onClick={() => acceptOrder(order._id)}
+                                className="bg-green-600 text-white font-bold rounded-xl py-1.5 px-4 text-[11px] flex items-center gap-1.5"
+                              >
+                                Accept
+                              </button>
+                              <button
+                                onClick={() => declineOrder(order._id)}
+                                className="bg-red-50 text-red-600 border border-red-100 font-bold rounded-xl py-1.5 px-4 text-[11px] flex items-center gap-1.5"
+                              >
+                                Decline
+                              </button>
+                            </div>
+                          )}
                           {order.orderStatus === 'confirmed' && (
                             <button
                               onClick={() => startPooja(order._id)}
