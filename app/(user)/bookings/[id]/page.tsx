@@ -100,6 +100,18 @@ export default function BookingDetailsPage({ params }: { params: { id: string } 
 
         loadData();
     }, [orderId])
+    
+    // Handle scroll to review section
+    useEffect(() => {
+        if (!loading && window.location.hash === '#review-section') {
+            const element = document.getElementById('review-section');
+            if (element) {
+                setTimeout(() => {
+                    element.scrollIntoView({ behavior: 'smooth' });
+                }, 100);
+            }
+        }
+    }, [loading]);
 
     return (
         <>
@@ -284,7 +296,7 @@ export default function BookingDetailsPage({ params }: { params: { id: string } 
                             </div>
 
                             {/* Review Section */}
-                            {order.orderStatus === 'completed' && user && (
+                            {order.orderStatus === 'completed' && user && order.poojaId && order.templeId && (
                               <section id="review-section" className="mt-8 border-t border-[#f0dcc8] pt-8">
                                 <ReviewForm 
                                   orderId={order._id}

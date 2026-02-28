@@ -25,6 +25,29 @@ function loadRazorpayScript(): Promise<boolean> {
   });
 }
 
+const COUNTRIES = [
+  { name: "India", code: "91", flag: "🇮🇳" },
+  { name: "Nepal", code: "977", flag: "🇳🇵" },
+  { name: "USA", code: "1", flag: "🇺🇸" },
+  { name: "UK", code: "44", flag: "🇬🇧" },
+  { name: "Canada", code: "1", flag: "🇨🇦" },
+  { name: "Australia", code: "61", flag: "🇦🇺" },
+  { name: "UAE", code: "971", flag: "🇦🇪" },
+  { name: "Singapore", code: "65", flag: "🇸🇬" },
+  { name: "Malaysia", code: "60", flag: "🇲🇾" },
+  { name: "Mauritius", code: "230", flag: "🇲🇺" },
+  { name: "Fiji", code: "679", flag: "🇫🇯" },
+  { name: "South Africa", code: "27", flag: "🇿🇦" },
+  { name: "Germany", code: "49", flag: "🇩🇪" },
+  { name: "France", code: "33", flag: "🇫🇷" },
+  { name: "Guyana", code: "592", flag: "🇬🇾" },
+  { name: "Suriname", code: "597", flag: "🇸🇷" },
+  { name: "Trinidad", code: "1", flag: "🇹🇹" },
+  { name: "Sri Lanka", code: "94", flag: "🇱🇰" },
+  { name: "Bangladesh", code: "880", flag: "🇧🇩" },
+  { name: "Indonesia", code: "62", flag: "🇮🇩" },
+];
+
 function CartContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -337,21 +360,23 @@ function CartContent() {
                           setCountryCode(e.target.value);
                           if (sameAsPhone) setWhatsappCountryCode(e.target.value);
                         }}
-                        className="px-2 border border-r-0 border-[#f0dcc8] rounded-l-xl text-xs text-[#6b5b45] bg-[#fdf6ee] outline-none"
+                        className="px-2 border border-r-0 border-[#f0dcc8] rounded-l-xl text-xs text-[#6b5b45] bg-[#fdf6ee] outline-none max-w-[100px]"
                       >
-                        <option value="91">+91 (IN)</option>
-                        <option value="977">+977 (NP)</option>
+                        {COUNTRIES.map((c) => (
+                          <option key={`${c.name}-${c.code}`} value={c.code}>
+                            {c.flag} +{c.code} ({c.name})
+                          </option>
+                        ))}
                       </select>
                       <input
                         name="phone"
                         value={form.phone}
                         onChange={(e) => {
-                          const val = e.target.value.replace(/\D/g, '').slice(0, 10);
+                          const val = e.target.value.replace(/\D/g, '');
                           setForm(f => ({ ...f, phone: val, whatsapp: sameAsPhone ? val : f.whatsapp }));
                         }}
-                        placeholder="10-digit mobile"
+                        placeholder="Mobile number"
                         className="flex-1 border border-[#f0dcc8] rounded-r-xl px-3 py-2 text-sm outline-none focus:border-[#ff7f0a]"
-                        maxLength={10}
                       />
                     </div>
                   </div>
@@ -364,19 +389,21 @@ function CartContent() {
                         value={sameAsPhone ? countryCode : whatsappCountryCode}
                         disabled={sameAsPhone}
                         onChange={(e) => setWhatsappCountryCode(e.target.value)}
-                        className="px-2 border border-r-0 border-[#f0dcc8] rounded-l-xl text-xs text-[#6b5b45] bg-[#fdf6ee] outline-none disabled:opacity-70"
+                        className="px-2 border border-r-0 border-[#f0dcc8] rounded-l-xl text-xs text-[#6b5b45] bg-[#fdf6ee] outline-none disabled:opacity-70 max-w-[100px]"
                       >
-                        <option value="91">+91</option>
-                        <option value="977">+977</option>
+                        {COUNTRIES.map((c) => (
+                          <option key={`wa-${c.name}-${c.code}`} value={c.code}>
+                            {c.flag} +{c.code}
+                          </option>
+                        ))}
                       </select>
                       <input
                         name="whatsapp"
                         value={form.whatsapp}
                         disabled={sameAsPhone}
-                        onChange={(e) => setForm(f => ({ ...f, whatsapp: e.target.value.replace(/\D/g, '').slice(0, 10) }))}
+                        onChange={(e) => setForm(f => ({ ...f, whatsapp: e.target.value.replace(/\D/g, '') }))}
                         placeholder="WhatsApp number"
                         className="flex-1 border border-[#f0dcc8] rounded-r-xl px-3 py-2 text-sm outline-none focus:border-[#ff7f0a] disabled:bg-[#fdf6ee]"
-                        maxLength={10}
                       />
                     </div>
                     <label className="flex items-center gap-2 mt-2 cursor-pointer">

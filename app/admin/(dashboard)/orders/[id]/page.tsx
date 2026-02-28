@@ -18,6 +18,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { getOrderById, getPanditsAdmin, assignPanditToOrder, updateOrderStatus, updateOrderVideo } from "@/lib/actions/admin";
+import CloudinaryUploader from "@/components/admin/CloudinaryUploader";
 
 export default function OrderDetailPage() {
     const { id } = useParams() as { id: string };
@@ -149,17 +150,32 @@ export default function OrderDetailPage() {
                     {/* Video / Delivery Card */}
                     <div className="bg-white rounded-3xl border border-gray-100 shadow-sm p-6 space-y-4">
                         <h3 className="text-sm font-bold text-gray-900 flex items-center gap-2"><Video size={16} className="text-[#ff7f0a]" /> Pooja Video URL</h3>
+
+                        {/* Direct Cloudinary Upload */}
+                        <div className="pb-2 border-b border-gray-50 mb-4">
+                            <CloudinaryUploader
+                                folder="pooja_recordings"
+                                onUploadSuccess={(url) => {
+                                    setVideoUrl(url);
+                                    // Optionally auto-save after upload
+                                    updateOrderVideo(id, url).then(updated => {
+                                        if (updated) setOrder(updated);
+                                    });
+                                }}
+                            />
+                        </div>
+
                         <div className="flex gap-2">
                             <input
                                 value={videoUrl}
                                 onChange={(e) => setVideoUrl(e.target.value)}
-                                placeholder="Enter S3/YouTube Video Link"
-                                className="flex-1 px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-[#ff7f0a]/20 outline-none"
+                                placeholder="Enter S3/YouTube/Cloudinary Link"
+                                className="flex-1 px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-[#ff7f0a]/20 outline-none text-sm"
                             />
                             <button
                                 onClick={handleSaveVideo}
                                 disabled={saving}
-                                className="bg-[#ff7f0a] text-white px-6 py-3 rounded-xl font-bold hover:bg-[#e67208] transition-all disabled:opacity-50"
+                                className="bg-[#ff7f0a] text-white px-6 py-3 rounded-xl font-bold hover:bg-[#e67208] transition-all disabled:opacity-50 text-sm"
                             >
                                 Save & Complete
                             </button>
@@ -221,9 +237,6 @@ export default function OrderDetailPage() {
                             className="w-full flex items-center justify-center gap-2 py-3 rounded-xl bg-green-50 text-green-700 text-sm font-bold hover:bg-green-100 transition-all"
                         >
                             <MessageCircle size={18} /> WhatsApp User
-                        </button>
-                        <button className="w-full flex items-center justify-center gap-2 py-3 rounded-xl bg-orange-50 text-[#ff7f0a] text-sm font-bold hover:bg-orange-100 transition-all">
-                            <Send size={18} /> Manual Notification
                         </button>
                     </div>
                 </div>

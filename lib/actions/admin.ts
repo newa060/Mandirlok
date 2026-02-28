@@ -380,13 +380,31 @@ export async function updatePayoutStatus(id: string, status: string) {
     try {
         await connectDB();
         const Payout = mongoose.models.Payout || mongoose.model("Payout");
-        const payout = await Payout.findByIdAndUpdate(
-            id,
-            { status, processedAt: status === "paid" ? new Date() : null },
-            { new: true }
-        );
+
+        // Find existing payout
+        const existingPayout = await Payout.findById(id);
+        if (!existingPayout) return { success: false, error: "Payout not found" };
+
+        // If transitioning to "paid", decrement pandit earnings
+        if (status === "paid" && existingPayout.status !== "paid") {
+            const pandit = await Pandit.findById(existingPayout.panditId);
+            if (pandit) {
+                // Ensure they don't go below 0 (should already be checked by request logic but for safety)
+                pandit.unpaidEarnings = Math.max(0, pandit.unpaidEarnings - existingPayout.amount);
+                await pandit.save();
+            }
+        }
+
+        // Handle Rejection: If status was "paid" and now is changed back (though rare), maybe we should increment? 
+        // But the user specifically asked for "already paid" fix.
+        // Actually, if we reject a "requested" payout, no change to earnings is needed.
+
+        existingPayout.status = status;
+        if (status === "paid") existingPayout.processedAt = new Date();
+        await existingPayout.save();
+
         revalidatePath("/admin/payments/payouts");
-        return { success: true, payout: JSON.parse(JSON.stringify(payout)) };
+        return { success: true, payout: JSON.parse(JSON.stringify(existingPayout)) };
     } catch (error: any) {
         return { success: false, error: error.message };
     }

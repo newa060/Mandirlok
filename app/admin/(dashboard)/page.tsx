@@ -87,7 +87,6 @@ export default async function AdminDashboard() {
           { label: "Add Temple", emoji: "🛕", href: "/admin/temples/add" },
           { label: "Add Pooja", emoji: "🪔", href: "/admin/poojas/add" },
           { label: "Add Pandit", emoji: "🧘", href: "/admin/pandits/add" },
-          { label: "Send WhatsApp", emoji: "💬", href: "/admin/whatsapp" },
         ].map((a) => (
           <Link
             key={a.label}

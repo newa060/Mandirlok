@@ -334,7 +334,7 @@ function PujaCard({ puja }: { puja: Pooja }) {
               <p className="font-bold text-orange-600 text-sm">{puja.availableDays || "Daily"}</p>
             </div>
           </div>
-          
+
 
 
           <Link
@@ -784,7 +784,7 @@ function TestimonialsSection() {
           title="What Our Devotees Say"
           subtitle="Thousands of devotees trust Mandirlok to connect them with divine blessings from India's sacred temples."
         />
-        
+
         <div className="relative">
           <div className="flex flex-wrap justify-center gap-6">
             {loading ? (

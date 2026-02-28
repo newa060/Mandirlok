@@ -13,6 +13,10 @@ export async function POST(req: Request) {
       return NextResponse.json({ success: false, message: "Invalid amount" }, { status: 400 });
     }
 
+    if (!upiId && !bankAccount) {
+      return NextResponse.json({ success: false, message: "Please provide either UPI ID or Bank Details" }, { status: 400 });
+    }
+
     await connectDB();
 
     const pandit = await Pandit.findById(panditId);

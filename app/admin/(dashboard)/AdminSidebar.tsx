@@ -1,8 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { getSettings } from "@/lib/actions/admin";
 import {
     LayoutDashboard,
     MapPin,
@@ -40,6 +41,19 @@ const navItems = [
 export default function AdminSidebar() {
     const pathname = usePathname();
     const [sideOpen, setSideOpen] = useState(false);
+    const [logoUrl, setLogoUrl] = useState<string | null>(null);
+
+    useEffect(() => {
+        async function loadLogo() {
+            try {
+                const setting = await getSettings("website_logo");
+                if (setting && setting.value) setLogoUrl(setting.value);
+            } catch (err) {
+                console.error("Failed to load logo", err);
+            }
+        }
+        loadLogo();
+    }, []);
 
     return (
         <>
@@ -52,9 +66,13 @@ export default function AdminSidebar() {
                     >
                         <Menu size={20} />
                     </button>
-                    <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-[#ff7f0a] to-[#8b0000] flex items-center justify-center font-bold text-lg text-white">
-                        म
-                    </div>
+                    {logoUrl ? (
+                        <img src={logoUrl} alt="Logo" className="w-9 h-9 object-contain" />
+                    ) : (
+                        <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-[#ff7f0a] to-[#8b0000] flex items-center justify-center font-bold text-lg text-white">
+                            म
+                        </div>
+                    )}
                 </div>
             </header>
 
@@ -72,9 +90,13 @@ export default function AdminSidebar() {
                     } lg:translate-x-0 lg:static lg:flex`}
             >
                 <div className="flex items-center gap-3 px-5 py-5 border-b border-white/10">
-                    <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-[#ff7f0a] to-[#8b0000] flex items-center justify-center font-bold text-lg">
-                        म
-                    </div>
+                    {logoUrl ? (
+                        <img src={logoUrl} alt="Logo" className="w-9 h-9 object-contain" />
+                    ) : (
+                        <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-[#ff7f0a] to-[#8b0000] flex items-center justify-center font-bold text-lg">
+                            म
+                        </div>
+                    )}
                     <div>
                         <span className="font-display font-bold text-sm">Mandirlok</span>
                         <span className="block text-[10px] text-[#ff9b30] tracking-widest uppercase">

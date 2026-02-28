@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { X, Video, ExternalLink, CheckCircle } from 'lucide-react'
+import CloudinaryUploader from '@/components/admin/CloudinaryUploader'
 
 interface VideoUploadModalProps {
   orderId: string;
@@ -83,11 +84,28 @@ export default function VideoUploadModal({ orderId, devoteeName, poojaName, onSu
               </p>
             </div>
 
+            {/* Direct Cloudinary Upload */}
+            <div className="mb-6 p-4 bg-gray-50 rounded-2xl border border-gray-100">
+              <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-3">Option 1: Direct Upload</p>
+              <CloudinaryUploader 
+                folder="pooja_recordings"
+                onUploadSuccess={(url) => {
+                  setVideoUrl(url);
+                  // Optionally you could even trigger the submit here
+                }}
+              />
+            </div>
+
+            <div className="relative flex items-center gap-4 mb-6">
+              <div className="flex-1 h-px bg-gray-100" />
+              <span className="text-[10px] font-bold text-gray-300 uppercase">Or</span>
+              <div className="flex-1 h-px bg-gray-100" />
+            </div>
 
             <form onSubmit={handleSubmit} className="space-y-6">
               <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-2">
-                  Video Link (YouTube / Google Drive)
+                  Option 2: Video Link (YouTube / Drive)
                 </label>
                 <div className="relative">
                   <ExternalLink size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" />

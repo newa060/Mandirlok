@@ -1,8 +1,9 @@
-'use client'
+"use client";
 
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
+import { getSettings } from '@/lib/actions/admin'
 import {
   LayoutDashboard,
   Calendar,
@@ -21,6 +22,7 @@ export default function PanditSidebar() {
   const router = useRouter()
   const [isOpen, setIsOpen] = useState(false)
   const [pandit, setPandit] = useState<any>(null)
+  const [logoUrl, setLogoUrl] = useState<string | null>(null)
 
   useEffect(() => {
     fetch('/api/pandit/me')
@@ -28,6 +30,16 @@ export default function PanditSidebar() {
       .then(data => {
         if (data.success) setPandit(data.data)
       })
+
+    async function loadLogo() {
+      try {
+        const setting = await getSettings("website_logo");
+        if (setting && setting.value) setLogoUrl(setting.value);
+      } catch (err) {
+        console.error("Failed to load logo", err);
+      }
+    }
+    loadLogo();
   }, [])
 
   const navItems = [
@@ -49,9 +61,13 @@ export default function PanditSidebar() {
       {/* Header */}
       <div className="p-6 border-b border-white/10">
         <div className="flex items-center gap-3 mb-4">
-          <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#ff7f0a] to-[#8b0000] flex items-center justify-center text-white font-bold text-lg shadow-lg">
-            {pandit?.name?.[0] || 'P'}
-          </div>
+          {logoUrl ? (
+            <img src={logoUrl} alt="Logo" className="w-10 h-10 object-contain" />
+          ) : (
+            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#ff7f0a] to-[#8b0000] flex items-center justify-center text-white font-bold text-lg shadow-lg">
+              {pandit?.name?.[0] || 'P'}
+            </div>
+          )}
           <div className="flex-1 min-w-0">
             <h2 className="font-display font-bold text-sm truncate">{pandit?.name || 'Loading...'}</h2>
             {pandit?.isVerified && (
@@ -74,11 +90,10 @@ export default function PanditSidebar() {
             <Link
               key={item.label}
               href={item.href}
-              className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm transition-all ${
-                isActive
-                  ? 'bg-[#ff7f0a] text-white shadow-lg shadow-orange-900/20'
-                  : 'text-[#b89b7a] hover:bg-white/5 hover:text-white'
-              }`}
+              className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm transition-all ${isActive
+                ? 'bg-[#ff7f0a] text-white shadow-lg shadow-orange-900/20'
+                : 'text-[#b89b7a] hover:bg-white/5 hover:text-white'
+                }`}
               onClick={() => setIsOpen(false)}
             >
               {item.icon}

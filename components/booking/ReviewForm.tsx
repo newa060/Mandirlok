@@ -28,6 +28,7 @@ export default function ReviewForm({
   const [comment, setComment] = useState(existingReview?.comment || "");
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(!!existingReview);
+  const [isEditing, setIsEditing] = useState(false);
   const [error, setError] = useState("");
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -53,6 +54,14 @@ export default function ReviewForm({
 
       if (res.success) {
         setSubmitted(true);
+        setIsEditing(false);
+        // If this was an update, the page parent (page.tsx) will handle the new state
+        // through revalidatePath in the server action, but for immediate UI feedback:
+        if (existingReview) {
+            existingReview.rating = rating;
+            existingReview.comment = comment;
+            existingReview.isApproved = false;
+        }
       } else {
         setError(res.error || "Failed to submit review.");
       }
@@ -63,7 +72,7 @@ export default function ReviewForm({
     }
   };
 
-  if (submitted && !existingReview) {
+  if (submitted && !existingReview && !isEditing) {
     return (
       <div className="bg-green-50 border border-green-200 rounded-2xl p-6 text-center">
         <div className="text-3xl mb-2">🙏</div>
@@ -72,28 +81,42 @@ export default function ReviewForm({
           Thank you for sharing your experience. Your feedback helps other devotees.
           It will be visible once approved by our team.
         </p>
+        <button 
+          onClick={() => setIsEditing(true)}
+          className="mt-4 text-xs font-semibold text-green-700 border border-green-200 px-4 py-1.5 rounded-full hover:bg-green-100 transition"
+        >
+          Edit Review
+        </button>
       </div>
     );
   }
 
-  if (existingReview) {
+  if (existingReview && !isEditing) {
     return (
       <div className="bg-white border border-[#f0dcc8] rounded-2xl p-6 shadow-card">
-        <h3 className="font-display font-semibold text-[#1a1209] mb-4">Your Review</h3>
+        <div className="flex justify-between items-start mb-4">
+          <h3 className="font-display font-semibold text-[#1a1209]">Your Review</h3>
+          <button 
+            onClick={() => setIsEditing(true)}
+            className="text-xs font-semibold text-[#ff7f0a] border border-[#ffd9a8] px-3 py-1 rounded-full hover:bg-[#fff8f0] transition"
+          >
+            Edit
+          </button>
+        </div>
         <div className="flex gap-1 mb-3">
           {[1, 2, 3, 4, 5].map((star) => (
             <Star
               key={star}
               size={20}
               className={`${
-                star <= existingReview.rating
+                star <= (existingReview.rating === rating ? existingReview.rating : rating)
                   ? "fill-amber-400 text-amber-400"
                   : "text-gray-300"
               }`}
             />
           ))}
         </div>
-        <p className="text-sm text-[#6b5b45] italic">"{existingReview.comment}"</p>
+        <p className="text-sm text-[#6b5b45] italic">"{existingReview.comment === comment ? existingReview.comment : comment}"</p>
         {!existingReview.isApproved && (
           <p className="text-[10px] text-orange-500 mt-3 font-medium bg-orange-50 px-2.5 py-1 rounded-full border border-orange-100 inline-block">
             Status: Pending Approval

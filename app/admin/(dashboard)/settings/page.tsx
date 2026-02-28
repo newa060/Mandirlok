@@ -24,6 +24,7 @@ export default function SettingsPage() {
         bannerUrl: "",
         welcomeMessage: "Welcome to your Divine Journey"
     });
+    const [logoUrl, setLogoUrl] = useState("");
     const [pageBanners, setPageBanners] = useState({
         poojas: "",
         chadhava: "",
@@ -35,23 +36,23 @@ export default function SettingsPage() {
         { id: "landing", label: "Landing Page", icon: <Layout size={18} /> },
         { id: "page_banners", label: "Page Banners", icon: <ImageIcon size={18} /> },
         { id: "user_dashboard", label: "User Dashboard", icon: <Layout size={18} /> },
-        { id: "security", label: "Security", icon: <Shield size={18} /> },
-        { id: "notifications", label: "Notifications", icon: <Bell size={18} /> },
         { id: "payments", label: "Payments", icon: <IndianRupee size={18} /> },
     ];
 
     useEffect(() => {
         async function fetchSettings() {
             setLoading(true);
-            const [slideRes, dashRes, bannerRes] = await Promise.all([
+            const [slideRes, dashRes, bannerRes, logoRes] = await Promise.all([
                 getSettings("landing_page_slides"),
                 getSettings("dashboard_settings"),
-                getSettings("page_banners")
+                getSettings("page_banners"),
+                getSettings("website_logo")
             ]);
 
             if (slideRes && slideRes.value) setSlides(slideRes.value);
             if (dashRes && dashRes.value) setDashboardSettings(dashRes.value);
             if (bannerRes && bannerRes.value) setPageBanners(bannerRes.value);
+            if (logoRes && logoRes.value) setLogoUrl(logoRes.value);
 
             setLoading(false);
         }
@@ -81,6 +82,8 @@ export default function SettingsPage() {
                 await updateSettings("dashboard_settings", dashboardSettings, "Banner and welcome info for user dashboard");
             } else if (activeTab === "page_banners") {
                 await updateSettings("page_banners", pageBanners, "Background images for Poojas and Chadhava banners");
+            } else if (activeTab === "general") {
+                await updateSettings("website_logo", logoUrl, "Website main logo URL");
             }
             alert("Settings saved successfully!");
         } catch (err) {
@@ -129,6 +132,20 @@ export default function SettingsPage() {
                                     <div className="space-y-1.5">
                                         <label className="text-xs font-bold text-gray-400 uppercase tracking-widest">Support Email</label>
                                         <input defaultValue="support@mandirlok.com" className="w-full px-4 py-3 rounded-xl border border-gray-200" />
+                                    </div>
+                                    <div className="space-y-1.5">
+                                        <label className="text-xs font-bold text-gray-400 uppercase tracking-widest">Website Logo URL</label>
+                                        <input
+                                            value={logoUrl}
+                                            onChange={(e) => setLogoUrl(e.target.value)}
+                                            placeholder="https://cloudinary.com/..."
+                                            className="w-full px-4 py-3 rounded-xl border border-gray-200"
+                                        />
+                                        {logoUrl && (
+                                            <div className="mt-2 p-4 bg-gray-50 rounded-xl inline-block border border-gray-100">
+                                                <img src={logoUrl} alt="Logo Preview" className="h-10 object-contain" />
+                                            </div>
+                                        )}
                                     </div>
                                     <div className="space-y-1.5">
                                         <label className="text-xs font-bold text-gray-400 uppercase tracking-widest">Default Commission (%)</label>
@@ -381,12 +398,7 @@ export default function SettingsPage() {
                                 </div>
                             )}
 
-                            {activeTab === "security" && (
-                                <div className="space-y-6">
-                                    <p className="text-sm text-gray-500 italic">Manage your admin password and 2FA settings.</p>
-                                    <button className="bg-gray-900 text-white px-6 py-2 rounded-xl text-sm font-bold hover:bg-black transition-all">Change Password</button>
-                                </div>
-                            )}
+
 
                             <div className="pt-6 border-t border-gray-50 flex justify-end">
                                 <button

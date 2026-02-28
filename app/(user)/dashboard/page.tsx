@@ -354,7 +354,7 @@ export default function DashboardPage() {
                                 <Download size={12} /> Receipt
                               </button>
                             )}
-                            {order.orderStatus === "completed" && (
+                            {order.orderStatus === "completed" && order.poojaId && (
                               <Link
                                 href={`/bookings/${order._id}#review-section`}
                                 className="flex items-center gap-1.5 text-xs bg-amber-50 border border-amber-200 text-amber-700 px-3 py-1.5 rounded-full font-medium hover:bg-amber-100"

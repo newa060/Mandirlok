@@ -3,6 +3,8 @@
 import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 
+import { getSettings } from "@/lib/actions/admin";
+
 const NAV_LINKS = [
   { label: "Home", href: "/" },
   { label: "Pujas", href: "/poojas" },
@@ -33,7 +35,21 @@ export default function Navbar() {
   const [profileOpen, setProfileOpen] = useState(false);
   const [user, setUser] = useState<UserInfo | null>(null);
   const [authLoading, setAuthLoading] = useState(true);
+  const [logoUrl, setLogoUrl] = useState<string | null>(null);
   const profileRef = useRef<HTMLDivElement>(null);
+
+  // ── Fetch Logo ──
+  useEffect(() => {
+    async function loadLogo() {
+      try {
+        const setting = await getSettings("website_logo");
+        if (setting && setting.value) setLogoUrl(setting.value);
+      } catch (err) {
+        console.error("Failed to load logo", err);
+      }
+    }
+    loadLogo();
+  }, []);
 
   // ── Check auth on mount ──
   useEffect(() => {
@@ -185,9 +201,13 @@ export default function Navbar() {
 
             {/* LOGO */}
             <Link href="/" className="flex items-center gap-2.5 group shrink-0">
-              <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-orange-500 to-rose-600 flex items-center justify-center text-white text-lg shadow-md group-hover:shadow-orange-300/50 transition-all duration-300 group-hover:scale-110">
-                🛕
-              </div>
+              {logoUrl ? (
+                <img src={logoUrl} alt="Mandirlok Logo" className="h-9 w-auto object-contain transition-transform duration-300 group-hover:scale-110" />
+              ) : (
+                <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-orange-500 to-rose-600 flex items-center justify-center text-white text-lg shadow-md group-hover:shadow-orange-300/50 transition-all duration-300 group-hover:scale-110">
+                  🛕
+                </div>
+              )}
               <div className="flex flex-col leading-none">
                 <span className="text-[15px] font-extrabold text-[#1a0500] tracking-tight">Mandirlok</span>
                 <span className="text-[10px] text-orange-500 font-semibold tracking-widest uppercase">Sacred Services</span>

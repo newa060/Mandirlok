@@ -25,21 +25,21 @@ export async function submitReview(data: {
       throw new Error("Review can only be submitted for completed orders");
     }
 
-    // Check if review already exists for this order
-    const existingReview = await Review.findOne({ orderId: data.orderId });
-    if (existingReview) throw new Error("Review already exists for this booking");
-
-    const review = await Review.create({
-      userId: new Types.ObjectId(data.userId),
-      orderId: new Types.ObjectId(data.orderId),
-      poojaId: new Types.ObjectId(data.poojaId),
-      templeId: new Types.ObjectId(data.templeId),
-      panditId: data.panditId ? new Types.ObjectId(data.panditId) : null as any,
-      rating: data.rating,
-      comment: data.comment,
-      isApproved: false,
-      isFeatured: false,
-    });
+    // Use findOneAndUpdate to handle both creation and editing
+    const review = await Review.findOneAndUpdate(
+      { orderId: new Types.ObjectId(data.orderId) },
+      {
+        userId: new Types.ObjectId(data.userId),
+        poojaId: new Types.ObjectId(data.poojaId),
+        templeId: new Types.ObjectId(data.templeId),
+        panditId: data.panditId ? new Types.ObjectId(data.panditId) : null,
+        rating: data.rating,
+        comment: data.comment,
+        isApproved: false, // Reset approval on any change
+        isFeatured: false,
+      },
+      { upsert: true, new: true }
+    );
 
     revalidatePath(`/bookings/${data.orderId}`);
     revalidatePath("/dashboard");
