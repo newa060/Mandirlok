@@ -9,7 +9,7 @@ export async function PATCH(req: Request) {
     const body = await req.json();
 
     // Only allow specific fields to be updated
-    const allowedUpdates = ["name", "email", "bio", "languages", "photo"];
+    const allowedUpdates = ["name", "email", "bio", "languages", "photo", "whatsapp"];
     const updates: any = {};
 
     Object.keys(body).forEach(key => {

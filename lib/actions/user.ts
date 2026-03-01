@@ -151,7 +151,7 @@ export async function getNotifications() {
     if (!userId) return { success: false, message: "Please login" };
 
     await connectDB();
-    const notifications = await Notification.find({ userId })
+    const notifications = await Notification.find({ recipientId: userId, recipientModel: "User" })
       .sort({ createdAt: -1 })
       .lean();
 
@@ -167,7 +167,7 @@ export async function markNotificationRead(id: string) {
     if (!userId) return { success: false, message: "Please login" };
 
     await connectDB();
-    await Notification.findOneAndUpdate({ _id: id, userId }, { read: true });
+    await Notification.findOneAndUpdate({ _id: id, recipientId: userId, recipientModel: "User" }, { read: true });
 
     return { success: true };
   } catch (error: any) {

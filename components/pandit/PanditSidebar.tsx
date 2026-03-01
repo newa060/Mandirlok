@@ -14,8 +14,10 @@ import {
   LogOut,
   X,
   Menu,
-  Check
+  Check,
+  Bell
 } from 'lucide-react'
+import { getUnreadNotificationCount } from '@/lib/actions/notifications'
 
 export default function PanditSidebar() {
   const pathname = usePathname()
@@ -23,6 +25,7 @@ export default function PanditSidebar() {
   const [isOpen, setIsOpen] = useState(false)
   const [pandit, setPandit] = useState<any>(null)
   const [logoUrl, setLogoUrl] = useState<string | null>(null)
+  const [unreadCount, setUnreadCount] = useState(0)
 
   useEffect(() => {
     fetch('/api/pandit/me')
@@ -31,15 +34,18 @@ export default function PanditSidebar() {
         if (data.success) setPandit(data.data)
       })
 
-    async function loadLogo() {
+    async function loadStats() {
       try {
         const setting = await getSettings("website_logo");
         if (setting && setting.value) setLogoUrl(setting.value);
+
+        const countRes = await getUnreadNotificationCount();
+        if (countRes.success) setUnreadCount(countRes.data);
       } catch (err) {
-        console.error("Failed to load logo", err);
+        console.error("Failed to load stats", err);
       }
     }
-    loadLogo();
+    loadStats();
   }, [])
 
   const navItems = [
@@ -47,6 +53,7 @@ export default function PanditSidebar() {
     { label: 'Today\'s Poojas', icon: <Calendar size={18} />, href: '/pandit/orders?tab=today' },
     { label: 'Upcoming', icon: <Clock size={18} />, href: '/pandit/orders?tab=upcoming' },
     { label: 'Completed', icon: <CheckCircle size={18} />, href: '/pandit/orders?tab=completed' },
+    { label: 'Notifications', icon: <Bell size={18} />, href: '/pandit/notifications', count: unreadCount },
     { label: 'Earnings', icon: <IndianRupee size={18} />, href: '/pandit/earnings' },
     { label: 'Profile', icon: <User size={18} />, href: '/pandit/profile' },
   ]
@@ -97,7 +104,12 @@ export default function PanditSidebar() {
               onClick={() => setIsOpen(false)}
             >
               {item.icon}
-              <span className="font-medium">{item.label}</span>
+              <span className="font-medium flex-1">{item.label}</span>
+              {typeof item.count === 'number' && item.count > 0 && (
+                <span className="bg-red-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full min-w-[18px] text-center">
+                  {item.count > 99 ? '99+' : item.count}
+                </span>
+              )}
             </Link>
           )
         })}

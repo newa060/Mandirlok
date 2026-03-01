@@ -71,7 +71,8 @@ export async function POST(
     // Create In-app Notification
     try {
       await Notification.create({
-        userId: order.userId,
+        recipientId: order.userId,
+        recipientModel: "User",
         title: "Pooja Video Uploaded! 📹",
         message: `Your ${(order.poojaId as any).name} at ${(order.templeId as any).name} has been completed. You can now watch the video proof.`,
         type: "video",

@@ -133,7 +133,8 @@ export async function POST(req: Request) {
     // Create In-app Notification for payment
     try {
       await Notification.create({
-        userId: decoded.userId,
+        recipientId: decoded.userId,
+        recipientModel: "User",
         title: isDonation ? "Donation Successful! 🙏" : "Booking Confirmed! 📿",
         message: isDonation
           ? `Thank you for your generous contribution of ₹${totalAmount} towards ${poojaName}.`
@@ -182,7 +183,8 @@ export async function POST(req: Request) {
           // Create In-app Notification for Pandit Assignment
           try {
             await Notification.create({
-              userId: decoded.userId,
+              recipientId: decoded.userId,
+              recipientModel: "User",
               title: "Pandit Assigned! 🧘",
               message: `Pandit ${assignedPandit.name} has been assigned to your ${poojaName}.`,
               type: "booking",

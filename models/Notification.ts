@@ -1,7 +1,8 @@
 import mongoose, { Schema, Document, Model } from "mongoose";
 
 export interface INotification extends Document {
-    userId: mongoose.Types.ObjectId;
+    recipientId: mongoose.Types.ObjectId;
+    recipientModel: "User" | "Pandit";
     title: string;
     message: string;
     type: "booking" | "video" | "system" | "promotion";
@@ -13,7 +14,8 @@ export interface INotification extends Document {
 
 const NotificationSchema = new Schema<INotification>(
     {
-        userId: { type: Schema.Types.ObjectId, ref: "User", required: true, index: true },
+        recipientId: { type: Schema.Types.ObjectId, refPath: "recipientModel", required: true, index: true },
+        recipientModel: { type: String, required: true, enum: ["User", "Pandit"], default: "User" },
         title: { type: String, required: true },
         message: { type: String, required: true },
         type: {

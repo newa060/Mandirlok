@@ -10,6 +10,7 @@ import Order from "../../models/Order";
 import User from "../../models/User";
 import Settings from "../../models/Settings";
 import Payout from "../../models/Payout"; // Import Payout model
+import Notification from "../../models/Notification"; // Import Notification model
 import { sendWhatsApp } from "../whatsapp";
 import mongoose from "mongoose";
 
@@ -295,7 +296,7 @@ export async function assignPanditToOrder(orderId: string, panditId: string) {
             orderId,
             { panditId, orderStatus: "assigned" },
             { returnDocument: 'after' }
-        ).populate("panditId", "name").populate("poojaId", "name");
+        ).populate("panditId", "name whatsapp").populate("poojaId", "name");
 
         if (order) {
             try {
@@ -305,6 +306,32 @@ export async function assignPanditToOrder(orderId: string, panditId: string) {
                 );
             } catch (e) {
                 console.error("[WhatsApp pandit assigned notification failed]", e);
+            }
+
+            // Notify Pandit via WhatsApp
+            if ((order.panditId as any)?.whatsapp) {
+                try {
+                    await sendWhatsApp(
+                        (order.panditId as any).whatsapp,
+                        `🛕 *New Pooja Assigned — Mandirlok*\n\n📿 *Pooja:* ${(order.poojaId as any)?.name}\n📅 *Date:* ${new Date(order.bookingDate).toLocaleDateString("en-IN")}\n📋 *Booking ID:* ${order.bookingId}\n\nPlease log in to your Pandit Portal to view full details.`
+                    );
+                } catch (waError) {
+                    console.error("[WhatsApp pandit assignment notification failed]", waError);
+                }
+            }
+
+            // Create in-app notification for Pandit
+            try {
+                await Notification.create({
+                    recipientId: panditId,
+                    recipientModel: "Pandit",
+                    title: "New Puja Assigned! 📿",
+                    message: `You have been assigned to a new pooja: ${(order.poojaId as any)?.name}.`,
+                    type: "booking",
+                    link: `/pandit/orders`
+                });
+            } catch (notifError) {
+                console.error("Failed to create in-app notification for pandit (assignment):", notifError);
             }
         }
 
@@ -402,6 +429,33 @@ export async function updatePayoutStatus(id: string, status: string) {
         existingPayout.status = status;
         if (status === "paid") existingPayout.processedAt = new Date();
         await existingPayout.save();
+
+        // Create in-app notification for Pandit on payment
+        if (status === "paid") {
+            try {
+                const pandit = await Pandit.findById(existingPayout.panditId);
+
+                // In-app Notification
+                await Notification.create({
+                    recipientId: existingPayout.panditId,
+                    recipientModel: "Pandit",
+                    title: "Payment Processed! 💰",
+                    message: `Your payout of ₹${existingPayout.amount} has been processed successfully.`,
+                    type: "system",
+                    link: `/pandit/earnings`
+                });
+
+                // WhatsApp Notification
+                if (pandit && pandit.whatsapp) {
+                    await sendWhatsApp(
+                        pandit.whatsapp,
+                        `🙏 *Jai Shri Ram, Panditji!*\n\n*Update:* Your payout request has been processed.\n\n💰 *Amount:* ₹${existingPayout.amount}\n✅ *Status:* Paid\n📅 *Date:* ${new Date().toLocaleDateString("en-IN")}\n\nThe amount has been transferred to your registered account. Thank you for your divine service.\n\n🛕 *Mandirlok — Divine Blessings Delivered*`
+                    );
+                }
+            } catch (notifError) {
+                console.error("Failed to send payment notifications to pandit:", notifError);
+            }
+        }
 
         revalidatePath("/admin/payments/payouts");
         return { success: true, payout: JSON.parse(JSON.stringify(existingPayout)) };

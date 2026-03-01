@@ -37,7 +37,8 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
         // Create In-app Notification
         try {
             await Notification.create({
-                userId: order.userId,
+                recipientId: order.userId,
+                recipientModel: "User",
                 title: "Booking Accepted! 🧘",
                 message: `Your booking for ${(order.poojaId as any)?.name || "Pooja"} has been accepted by the Pandit.`,
                 type: "booking",

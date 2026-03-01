@@ -698,7 +698,7 @@ function HowItWorksSection() {
 }
 
 // ── Stats ─────────────────────────────────────────────────────────────────────
-function StatsSection() {
+function StatsSection({ stats }: { stats: any[] }) {
   return (
     <section className="bg-gradient-to-r from-orange-600 to-rose-700 py-14">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -711,7 +711,7 @@ function StatsSection() {
           </p>
         </div>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
-          {STATS.map((s, i) => (
+          {stats.map((s, i) => (
             <div key={i} className="text-center">
               <div className="text-4xl md:text-5xl font-extrabold text-white mb-1">
                 {s.value}
@@ -839,8 +839,22 @@ function TestimonialsSection() {
 export default function HomePage() {
   const [poojas, setPoojas] = useState<Pooja[]>([]);
   const [loading, setLoading] = useState(true);
+  const [stats, setStats] = useState(STATS);
 
   useEffect(() => {
+    async function fetchStats() {
+      try {
+        const res = await fetch("/api/stats");
+        const data = await res.json();
+        if (data.success) {
+          setStats(data.stats);
+        }
+      } catch (err) {
+        console.error("fetchStats error:", err);
+      }
+    }
+    fetchStats();
+
     async function fetchPoojas() {
       try {
         setLoading(true);
@@ -914,7 +928,7 @@ export default function HomePage() {
         </section>
 
         <HowItWorksSection />
-        <StatsSection />
+        <StatsSection stats={stats} />
         <FeaturesSection />
         <TestimonialsSection />
       </main>

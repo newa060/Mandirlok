@@ -29,7 +29,7 @@ interface Order {
   bookingDate: string;
   sankalpName: string;
   totalAmount: number;
-  orderStatus: "pending" | "confirmed" | "in-progress" | "completed" | "cancelled";
+  orderStatus: "pending" | "assigned" | "confirmed" | "in-progress" | "completed" | "cancelled";
   paymentStatus: "pending" | "paid" | "failed" | "refunded";
   videoUrl?: string;
   createdAt: string;
@@ -45,6 +45,7 @@ interface UserProfile {
 // ── Status Config ─────────────────────────────────────────────────────────────
 const statusConfig = {
   pending: { label: "Pending", bg: "bg-yellow-50", border: "border-yellow-200", text: "text-yellow-700" },
+  assigned: { label: "Assigned", bg: "bg-indigo-50", border: "border-indigo-200", text: "text-indigo-700" },
   confirmed: { label: "Confirmed", bg: "bg-[#fff8f0]", border: "border-[#ffd9a8]", text: "text-[#ff7f0a]" },
   "in-progress": { label: "In Progress", bg: "bg-blue-50", border: "border-blue-200", text: "text-blue-700" },
   completed: { label: "Completed", bg: "bg-green-50", border: "border-green-200", text: "text-green-700" },
@@ -118,7 +119,7 @@ export default function DashboardPage() {
 
   // Filter orders by tab
   const filtered = orders.filter((o) => {
-    if (activeTab === "upcoming") return o.orderStatus === "pending" || o.orderStatus === "confirmed" || o.orderStatus === "in-progress";
+    if (activeTab === "upcoming") return o.orderStatus === "pending" || o.orderStatus === "assigned" || o.orderStatus === "confirmed" || o.orderStatus === "in-progress";
     if (activeTab === "completed") return o.orderStatus === "completed";
     return true;
   });

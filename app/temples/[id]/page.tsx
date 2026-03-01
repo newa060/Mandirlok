@@ -25,6 +25,7 @@ interface Temple {
   images: string[];
   rating: number;
   totalReviews: number;
+  ratingDistribution?: Record<number, number>;
   pujasAvailable: number;
   openTime: string;
   phone: string;
@@ -300,21 +301,12 @@ export default function TempleDetailPage() {
     );
   }
 
-  // ── Computed rating breakdown (generated from real rating value) ───────────
-  // Since we don't store per-star breakdown in DB, we generate a realistic
-  // distribution from the overall rating. Swap this with real Review data later.
+  // ── Computed rating breakdown ──────────────────────────────────────────────
   const ratingBreakdown = [5, 4, 3, 2, 1].map((star) => {
-    const diff = Math.abs(star - temple.rating);
-    const percent =
-      star === Math.round(temple.rating)
-        ? 65
-        : star === Math.round(temple.rating) - 1
-          ? 20
-          : star === Math.round(temple.rating) + 1
-            ? 10
-            : diff <= 2
-              ? 3
-              : 2;
+    const count = temple.ratingDistribution?.[star] || 0;
+    const percent = temple.totalReviews > 0
+      ? Math.round((count / temple.totalReviews) * 100)
+      : 0;
     return { star, percent };
   });
 

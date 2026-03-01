@@ -12,6 +12,7 @@ export const dynamic = "force-dynamic";
 const statusConfig = {
   completed: { label: "Completed", bg: "bg-green-100", text: "text-green-700" },
   pending: { label: "Pending", bg: "bg-yellow-100", text: "text-yellow-700" },
+  assigned: { label: "Assigned", bg: "bg-indigo-100", text: "text-indigo-700" },
   "in-progress": {
     label: "In Progress",
     bg: "bg-blue-100",
@@ -164,9 +165,9 @@ export default async function AdminDashboard() {
                     </td>
                     <td className="px-4 py-3">
                       <span
-                        className={`text-xs font-semibold px-2.5 py-1 rounded-full ${sc.bg} ${sc.text}`}
+                        className={`text-xs font-semibold px-2.5 py-1 rounded-full ${sc.bg || 'bg-gray-100'} ${sc.text || 'text-gray-700'}`}
                       >
-                        {sc.label}
+                        {sc.label || order.orderStatus}
                       </span>
                     </td>
                     <td className="px-4 py-3">

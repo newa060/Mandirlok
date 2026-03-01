@@ -29,7 +29,7 @@ interface OrderData {
     poojaAmount: number
     chadhavaAmount: number
     totalAmount: number
-    orderStatus: 'pending' | 'confirmed' | 'in-progress' | 'completed' | 'cancelled'
+    orderStatus: 'pending' | 'assigned' | 'confirmed' | 'in-progress' | 'completed' | 'cancelled'
     paymentStatus: 'pending' | 'paid' | 'failed' | 'refunded'
     videoUrl?: string
     createdAt: string
@@ -38,6 +38,7 @@ interface OrderData {
 // ── Status Config ─────────────────────────────────────────────────────────────
 const statusConfig = {
     pending: { label: 'Pending', bg: 'bg-yellow-50', border: 'border-yellow-200', text: 'text-yellow-700' },
+    assigned: { label: 'Assigned', bg: 'bg-indigo-50', border: 'border-indigo-200', text: 'text-indigo-700' },
     confirmed: { label: 'Confirmed', bg: 'bg-[#fff8f0]', border: 'border-[#ffd9a8]', text: 'text-[#ff7f0a]' },
     'in-progress': { label: 'In Progress', bg: 'bg-blue-50', border: 'border-blue-200', text: 'text-blue-700' },
     completed: { label: 'Completed', bg: 'bg-green-50', border: 'border-green-200', text: 'text-green-700' },
@@ -70,37 +71,37 @@ export default function BookingDetailsPage({ params }: { params: { id: string } 
         }
 
         const loadData = async () => {
-          try {
-            const [orderRes, userRes] = await Promise.all([
-              fetch(`/api/orders/${orderId}`),
-              fetch(`/api/auth/me`)
-            ]);
+            try {
+                const [orderRes, userRes] = await Promise.all([
+                    fetch(`/api/orders/${orderId}`),
+                    fetch(`/api/auth/me`)
+                ]);
 
-            const orderData = await orderRes.json();
-            const userData = await userRes.json();
+                const orderData = await orderRes.json();
+                const userData = await userRes.json();
 
-            if (orderData.success) {
-              setOrder(orderData.data);
-              // Fetch review for this order
-              const reviewData = await getReviewByOrder(orderId);
-              setReview(reviewData);
-            } else {
-              setError(orderData.message || 'Could not load booking details.');
+                if (orderData.success) {
+                    setOrder(orderData.data);
+                    // Fetch review for this order
+                    const reviewData = await getReviewByOrder(orderId);
+                    setReview(reviewData);
+                } else {
+                    setError(orderData.message || 'Could not load booking details.');
+                }
+
+                if (userData.success) {
+                    setUser(userData.data);
+                }
+            } catch (err) {
+                setError('Failed to load booking details. Please try again.');
+            } finally {
+                setLoading(false);
             }
-
-            if (userData.success) {
-              setUser(userData.data);
-            }
-          } catch (err) {
-            setError('Failed to load booking details. Please try again.');
-          } finally {
-            setLoading(false);
-          }
         };
 
         loadData();
     }, [orderId])
-    
+
     // Handle scroll to review section
     useEffect(() => {
         if (!loading && window.location.hash === '#review-section') {
@@ -166,8 +167,8 @@ export default function BookingDetailsPage({ params }: { params: { id: string } 
                                         </p>
                                     </div>
                                     <div className="flex flex-col items-end gap-2">
-                                        <span className={`text-xs font-semibold px-3 py-1.5 rounded-full border ${statusConfig[order.orderStatus].bg} ${statusConfig[order.orderStatus].border} ${statusConfig[order.orderStatus].text}`}>
-                                            {statusConfig[order.orderStatus].label}
+                                        <span className={`text-xs font-semibold px-3 py-1.5 rounded-full border ${statusConfig[order.orderStatus]?.bg || 'bg-gray-50'} ${statusConfig[order.orderStatus]?.border || 'border-gray-200'} ${statusConfig[order.orderStatus]?.text || 'text-gray-600'}`}>
+                                            {statusConfig[order.orderStatus]?.label || order.orderStatus}
                                         </span>
                                         {order.paymentStatus === 'paid' ?
                                             <span className="text-[10px] font-medium text-green-600 bg-green-50 px-2 py-0.5 rounded border border-green-200">Payment: Success</span> :
@@ -297,16 +298,16 @@ export default function BookingDetailsPage({ params }: { params: { id: string } 
 
                             {/* Review Section */}
                             {order.orderStatus === 'completed' && user && order.poojaId && order.templeId && (
-                              <section id="review-section" className="mt-8 border-t border-[#f0dcc8] pt-8">
-                                <ReviewForm 
-                                  orderId={order._id}
-                                  userId={user._id}
-                                  poojaId={order.poojaId._id}
-                                  templeId={order.templeId._id}
-                                  poojaName={order.poojaId.name}
-                                  existingReview={review}
-                                />
-                              </section>
+                                <section id="review-section" className="mt-8 border-t border-[#f0dcc8] pt-8">
+                                    <ReviewForm
+                                        orderId={order._id}
+                                        userId={user._id}
+                                        poojaId={order.poojaId._id}
+                                        templeId={order.templeId._id}
+                                        poojaName={order.poojaId.name}
+                                        existingReview={review}
+                                    />
+                                </section>
                             )}
 
                         </div>

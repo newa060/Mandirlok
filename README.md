@@ -24,7 +24,6 @@ Payment Integration:
 
 Storage:
 - AWS S3 (for pooja video uploads)
-
 ---
 
 ## 👥 System Architecture
