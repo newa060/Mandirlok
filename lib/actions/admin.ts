@@ -13,6 +13,7 @@ import Payout from "../../models/Payout"; // Import Payout model
 import Notification from "../../models/Notification"; // Import Notification model
 import { sendWhatsApp } from "../whatsapp";
 import mongoose from "mongoose";
+import * as RazorpayX from "../razorpayX";
 
 // =======================
 // DASHBOARD STATS
@@ -108,27 +109,67 @@ export async function getPoojasAdmin() {
 export async function createPooja(data: any) {
     try {
         await connectDB();
-        const pooja = await Pooja.create(data);
+
+        // Ensure no _id is passed for creation
+        const { _id, ...createData } = data;
+
+        const pooja = await Pooja.create(createData);
+
         // Sync Temple pujasAvailable count
-        if (data.templeId) {
-            await Temple.findByIdAndUpdate(data.templeId, { $inc: { pujasAvailable: 1 } });
+        if (createData.templeId) {
+            await Temple.findByIdAndUpdate(createData.templeId, { $inc: { pujasAvailable: 1 } });
         }
-        revalidatePath("/admin/poojas");
+
+        try {
+            revalidatePath("/admin/poojas");
+            revalidatePath("/poojas");
+        } catch (revalError) {
+            console.error("Revalidation error (non-fatal):", revalError);
+        }
+
         return { success: true, pooja: JSON.parse(JSON.stringify(pooja)) };
     } catch (error: any) {
-        return { success: false, error: error.message };
+        console.error("createPooja error:", error);
+        return { success: false, error: error.message || "Failed to create pooja" };
     }
 }
 
 export async function updatePooja(id: string, data: any) {
     try {
         await connectDB();
-        const pooja = await Pooja.findByIdAndUpdate(id, data, { new: true });
-        revalidatePath("/admin/poojas");
-        revalidatePath("/poojas");
+
+        // Remove protected fields if they exist in data to prevent Mongoose errors
+        const { _id, createdAt, updatedAt, __v, ...updateData } = data;
+
+        // Use findById and save for better subdocument handling (packages)
+        const pooja = await Pooja.findById(id);
+        if (!pooja) return { success: false, error: "Pooja not found" };
+
+        // Use .set() to update all fields from the object
+        pooja.set(updateData);
+
+        // Explicitly mark packages as modified if they exist in updateData
+        // This is a safety measure for nested arrays in Mongoose
+        if (updateData.packages) {
+            pooja.markModified('packages');
+        }
+
+        await pooja.save();
+
+        // Specific revalidations
+        try {
+            revalidatePath("/admin/poojas");
+            revalidatePath("/poojas");
+            if (pooja.slug) revalidatePath(`/poojas/${pooja.slug}`);
+            revalidatePath(`/poojas/${id}`);
+        } catch (revalError) {
+            console.error("Revalidation error (non-fatal):", revalError);
+        }
+
         return { success: true, pooja: JSON.parse(JSON.stringify(pooja)) };
     } catch (error: any) {
-        return { success: false, error: error.message };
+        console.error("updatePooja error:", error);
+        return { success: false, error: error.message || "Failed to update pooja" };
     }
 }
 
@@ -579,5 +620,69 @@ export async function updateSettings(key: string, value: any, description?: stri
         return { success: true, setting: JSON.parse(JSON.stringify(setting)) };
     } catch (error: any) {
         return { success: false, error: error.message };
+    }
+}
+
+export async function processPayoutWithRazorpayX(payoutId: string) {
+    try {
+        await connectDB();
+        const PayoutModel = mongoose.models.Payout || mongoose.model("Payout");
+        const payout = await PayoutModel.findById(payoutId).populate("panditId");
+
+        if (!payout) return { success: false, error: "Payout not found" };
+        if (payout.status !== "requested" && payout.status !== "processing") {
+            return { success: false, error: `Cannot process payout in ${payout.status} status` };
+        }
+
+        const pandit = payout.panditId;
+        if (!pandit) return { success: false, error: "Pandit not found" };
+
+        if (!pandit.razorpayContactId) {
+            const contact = await RazorpayX.createContact(
+                pandit.name,
+                pandit.email || "pandit@mandirlok.com",
+                pandit.phone,
+                pandit._id.toString()
+            );
+            pandit.razorpayContactId = contact.id;
+            await pandit.save();
+        }
+
+        if (!pandit.razorpayFundAccountId) {
+            let fundAccount;
+            if (payout.upiId) {
+                fundAccount = await RazorpayX.createFundAccount(pandit.razorpayContactId, "vpa", { vpa: payout.upiId });
+            } else {
+                return { success: false, error: "Only UPI payouts are supported automatically for now." };
+            }
+            pandit.razorpayFundAccountId = fundAccount.id;
+            await pandit.save();
+        }
+
+        const razorpayXAccount = process.env.RAZORPAYX_ACCOUNT_NUMBER?.trim();
+        if (!razorpayXAccount) return { success: false, error: "RazorpayX account number (RAZORPAYX_ACCOUNT_NUMBER) not configured" };
+
+        const rpPayout = await RazorpayX.createRazorpayPayout({
+            accountNumber: razorpayXAccount,
+            fundAccountId: pandit.razorpayFundAccountId,
+            amount: payout.amount,
+            currency: "INR",
+            mode: "UPI",
+            purpose: "payout",
+            queueIfLowBalance: true,
+            referenceId: payout._id.toString(),
+            narrative: "Pandit Payout - Mandirlok"
+        });
+
+        payout.status = "processing";
+        payout.razorpayPayoutId = rpPayout.id;
+        await payout.save();
+
+        revalidatePath("/admin/payments/payouts");
+        return { success: true, payout: JSON.parse(JSON.stringify(payout)) };
+
+    } catch (error: any) {
+        console.error("processPayoutWithRazorpayX error:", error);
+        return { success: false, error: error.message || "Failed to initiate payout" };
     }
 }

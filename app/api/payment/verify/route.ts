@@ -50,6 +50,7 @@ export async function POST(req: Request) {
       address,
       isDonation,
       extraDonation,
+      packageSelected,
     } = body;
 
     // 2. Verify Razorpay signature
@@ -77,7 +78,12 @@ export async function POST(req: Request) {
           { status: 404 }
         );
       }
-      poojaAmount = pooja.price * qty;
+      if (packageSelected) {
+        const dbPackage = pooja.packages?.find((p: any) => p.name === packageSelected.name);
+        poojaAmount = dbPackage ? dbPackage.price : packageSelected.price;
+      } else {
+        poojaAmount = pooja.price * qty;
+      }
       poojaName = pooja.name;
     }
 
@@ -122,6 +128,7 @@ export async function POST(req: Request) {
       orderStatus: isDonation ? "completed" : "pending",
       isDonation: !!isDonation,
       extraDonation: extraDonation || 0,
+      packageSelected: packageSelected || undefined,
     };
 
     if (poojaId) {
@@ -144,6 +151,20 @@ export async function POST(req: Request) {
       });
     } catch (notifError) {
       console.error("Failed to create in-app notification (payment):", notifError);
+    }
+
+    // Create Admin Notification for new order
+    try {
+      await Notification.create({
+        recipientId: decoded.userId, // Using the user who paid as a proxy ID, though Admin doesn't need a specific recipientId usually, we'll use a placeholder or the user's ID
+        recipientModel: "Admin",
+        title: "New Order Received! 💰",
+        message: `A new order of ₹${totalAmount} has been placed for ${poojaName}.`,
+        type: "booking",
+        link: `/admin/orders`
+      });
+    } catch (adminNotifError) {
+      console.error("Failed to create admin notification (new order):", adminNotifError);
     }
 
     // 5. Auto-assign Pandit (Only if NOT a donation)

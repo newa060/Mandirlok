@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { connectDB } from "../db";
 import Review from "../../models/Review";
 import Order from "../../models/Order";
+import Notification from "../../models/Notification";
 import { Types } from "mongoose";
 
 export async function submitReview(data: {
@@ -44,6 +45,20 @@ export async function submitReview(data: {
     revalidatePath(`/bookings/${data.orderId}`);
     revalidatePath("/dashboard");
 
+    // Create Admin Notification for review submission
+    try {
+      await Notification.create({
+        recipientId: new Types.ObjectId(data.userId),
+        recipientModel: "Admin",
+        title: "New Review Submitted! ⭐",
+        message: `A new ${data.rating}-star review has been submitted for ${(order.poojaId as any)?.name || 'a pooja'}.`,
+        type: "system",
+        link: "/admin/reviews"
+      });
+    } catch (notifError) {
+      console.error("Failed to create admin notification (review):", notifError);
+    }
+
     return { success: true, data: JSON.parse(JSON.stringify(review)) };
   } catch (error: any) {
     console.error("[SUBMIT_REVIEW_ERROR]", error);
@@ -59,10 +74,13 @@ export async function getHomepageReviews() {
       .populate("userId", "name photo")
       .populate("templeId", "name location")
       .sort({ isFeatured: -1, createdAt: -1 })
-      .limit(6)
+      .limit(10) // Fetch a few more to allow for filtering
       .lean();
 
-    return { success: true, data: JSON.parse(JSON.stringify(reviews)) };
+    // Filter out reviews where population failed (referenced doc deleted)
+    const validReviews = (reviews as any[]).filter(rev => rev.userId && rev.templeId).slice(0, 6);
+
+    return { success: true, data: JSON.parse(JSON.stringify(validReviews)) };
   } catch (error: any) {
     return { success: false, error: error.message };
   }

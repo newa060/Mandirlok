@@ -15,6 +15,7 @@ import {
   Shield,
   Phone,
   Loader2,
+  Sparkles,
 } from "lucide-react";
 
 const dates = Array.from({ length: 7 }, (_, i) => {
@@ -44,8 +45,8 @@ export default function PoojaDetailPage() {
   const [error, setError] = useState("");
 
   const [selectedDate, setSelectedDate] = useState<number | null>(null);
+  const [selectedPackageIndex, setSelectedPackageIndex] = useState<number | null>(null);
   const [addedOfferings, setAddedOfferings] = useState<string[]>([]);
-  const [qty, setQty] = useState(1);
 
   useEffect(() => {
     if (!id) return;
@@ -70,6 +71,10 @@ export default function PoojaDetailPage() {
         ? prev.filter((x) => x !== offeringId)
         : [...prev, offeringId],
     );
+  };
+
+  const handlePackageSelect = (index: number) => {
+    setSelectedPackageIndex(prev => prev === index ? null : index);
   };
 
   if (loading) {
@@ -112,7 +117,9 @@ export default function PoojaDetailPage() {
   if (selectedDate !== null) {
     cartQuery.set("date", dates[selectedDate].value);
   }
-  cartQuery.set("qty", qty.toString());
+  if (selectedPackageIndex !== null) {
+    cartQuery.set("packageIndex", selectedPackageIndex.toString());
+  }
   if (addedOfferings.length > 0) {
     cartQuery.set("offerings", addedOfferings.join(","));
   }
@@ -247,6 +254,40 @@ export default function PoojaDetailPage() {
                 )}
               </div>
 
+              {/* Package Selection */}
+              {pooja.packages && pooja.packages.length > 0 && (
+                <div className="bg-white border border-[#f0dcc8] rounded-2xl p-5 shadow-card">
+                  <h3 className="font-display font-semibold text-[#1a1209] mb-4 flex items-center gap-2">
+                    <Sparkles size={18} className="text-[#ff7f0a]" /> Select Your Puja Package
+                  </h3>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                    {pooja.packages.map((pkg: any, i: number) => (
+                      <button
+                        key={i}
+                        onClick={() => handlePackageSelect(i)}
+                        className={`flex flex-col text-left p-4 rounded-2xl border transition-all relative ${selectedPackageIndex === i
+                          ? "border-[#ff7f0a] bg-[#fff8f0] ring-1 ring-[#ff7f0a]"
+                          : "border-[#f0dcc8] bg-white hover:border-[#ffbd6e]"
+                          }`}
+                      >
+                        {selectedPackageIndex === i && (
+                          <div className="absolute top-3 right-3 w-5 h-5 bg-[#ff7f0a] rounded-full flex items-center justify-center text-white">
+                            <Plus size={12} className="rotate-45" />
+                          </div>
+                        )}
+                        <span className={`inline-block px-3 py-1 rounded-full text-[10px] font-bold uppercase mb-3 w-fit ${selectedPackageIndex === i ? "bg-[#ff7f0a] text-white" : "bg-[#fff8f0] text-[#ff7f0a]"}`}>
+                          {pkg.members} {pkg.members === 1 ? 'Person' : 'Persons'}
+                        </span>
+                        <h4 className="font-bold text-[#1a1209] mb-4 h-10 overflow-hidden text-sm line-clamp-2">{pkg.name}</h4>
+                        <div className="mt-auto pt-2 border-t border-dashed border-[#f0dcc8]">
+                          <p className="text-xl font-bold text-[#ff7f0a]">₹{pkg.price}</p>
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
               {/* Chadhava Add-ons */}
               {offerings.length > 0 && (
                 <div className="bg-white border border-[#f0dcc8] rounded-2xl p-5 shadow-card">
@@ -330,29 +371,7 @@ export default function PoojaDetailPage() {
                   Book This Pooja
                 </h3>
 
-                {/* Devotees */}
-                <div className="flex items-center justify-between mb-4 pb-4 border-b border-[#f0dcc8]">
-                  <span className="text-sm text-[#6b5b45]">
-                    Devotees / Family Members
-                  </span>
-                  <div className="flex items-center gap-3">
-                    <button
-                      onClick={() => setQty((q) => Math.max(1, q - 1))}
-                      className="w-8 h-8 rounded-full border border-[#f0dcc8] flex items-center justify-center hover:border-[#ff7f0a] text-[#6b5b45] hover:text-[#ff7f0a]"
-                    >
-                      <Minus size={14} />
-                    </button>
-                    <span className="font-semibold text-[#1a1209] w-4 text-center">
-                      {qty}
-                    </span>
-                    <button
-                      onClick={() => setQty((q) => Math.min(10, q + 1))}
-                      className="w-8 h-8 rounded-full border border-[#f0dcc8] flex items-center justify-center hover:border-[#ff7f0a] text-[#6b5b45] hover:text-[#ff7f0a]"
-                    >
-                      <Plus size={14} />
-                    </button>
-                  </div>
-                </div>
+
 
                 {/* Selected offerings summary */}
                 {addedOfferings.length > 0 && (
@@ -389,8 +408,8 @@ export default function PoojaDetailPage() {
                 {/* Total Price or Note */}
                 <div className="bg-[#fff8f0] border border-[#ffd9a8] rounded-xl p-3 mb-4">
                   <div className="flex justify-between items-center text-sm font-semibold text-[#1a1209] mb-2">
-                    <span>Base Pooja Price:</span>
-                    <span>₹{pooja.price?.toLocaleString()}</span>
+                    <span>{selectedPackageIndex !== null ? `Package: ${pooja.packages[selectedPackageIndex].name}` : "Base Pooja Price:"}</span>
+                    <span>₹{(selectedPackageIndex !== null ? pooja.packages[selectedPackageIndex].price : pooja.price)?.toLocaleString()}</span>
                   </div>
                   {addedOfferings.length > 0 && (
                     <div className="flex justify-between items-center text-sm font-semibold text-[#1a1209] mb-2 pt-2 border-t border-[#ffd9a8]">
@@ -403,7 +422,7 @@ export default function PoojaDetailPage() {
                   )}
                   <div className="flex justify-between items-center text-lg font-bold text-[#ff7f0a] mt-2 pt-2 border-t border-[#ffd9a8]">
                     <span>Total Payable:</span>
-                    <span>₹{(pooja.price * qty + addedOfferings.reduce((sum, id) => {
+                    <span>₹{((selectedPackageIndex !== null ? pooja.packages[selectedPackageIndex].price : pooja.price) + addedOfferings.reduce((sum, id) => {
                       const o = offerings.find((x: any) => x._id === id);
                       return sum + (o ? o.price : 0);
                     }, 0)).toLocaleString()}</span>

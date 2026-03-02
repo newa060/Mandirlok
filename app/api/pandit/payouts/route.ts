@@ -39,6 +39,23 @@ export async function POST(req: Request) {
       }, { status: 400 });
     }
 
+    // Frequency Validation (Weekly)
+    const latestPayout = await Payout.findOne({ panditId }).sort({ createdAt: -1 });
+    const joinDate = new Date(pandit.createdAt);
+    const ONE_WEEK = 7 * 24 * 60 * 60 * 1000;
+
+    let nextPayoutDate = new Date(joinDate.getTime() + ONE_WEEK);
+    if (latestPayout) {
+      nextPayoutDate = new Date(new Date(latestPayout.createdAt).getTime() + ONE_WEEK);
+    }
+
+    if (new Date() < nextPayoutDate) {
+      return NextResponse.json({
+        success: false,
+        message: `Payouts are limited to once a week. Next payout available after ${nextPayoutDate.toLocaleDateString('en-IN')}`
+      }, { status: 400 });
+    }
+
     const payout = await Payout.create({
       panditId,
       amount,
@@ -46,6 +63,21 @@ export async function POST(req: Request) {
       upiId: upiId || "",
       bankAccount: bankAccount || ""
     });
+
+    // Create Admin Notification for payout request
+    try {
+      const Notification = (await import("@/models/Notification")).default;
+      await Notification.create({
+        recipientId: panditId,
+        recipientModel: "Admin",
+        title: "New Payout Request! 💸",
+        message: `Pandit ${pandit.name} has requested a payout of ₹${amount}.`,
+        type: "system",
+        link: `/admin/payments/payouts`
+      });
+    } catch (adminNotifError) {
+      console.error("Failed to create admin notification (payout request):", adminNotifError);
+    }
 
     return NextResponse.json({ success: true, data: payout });
   } catch (error: any) {

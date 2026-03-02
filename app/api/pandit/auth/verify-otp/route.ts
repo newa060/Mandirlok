@@ -6,7 +6,8 @@ import { generateToken } from "@/lib/jwt";
 
 export async function POST(req: Request) {
   try {
-    const { phone, email, otp } = await req.json();
+    let { phone, email, otp } = await req.json();
+    if (email) email = email.toLowerCase();
 
     if ((!phone && !email) || !otp) {
       return NextResponse.json(
@@ -50,10 +51,30 @@ export async function POST(req: Request) {
     // Delete used OTP
     await Otp.deleteOne({ _id: otpRecord._id });
 
+    // Check if phone or whatsapp is missing
+    const needsPhoneUpdate = !pandit.phone || !pandit.whatsapp;
+
     // Generate JWT
     const token = generateToken({ panditId: pandit._id.toString() });
 
-    const response = NextResponse.json({ success: true, message: "Login successful" });
+<<<<<<< HEAD
+    const response = NextResponse.json({
+      success: true,
+      message: "Login successful",
+      needsPhoneUpdate,
+      panditId: pandit._id.toString()
+=======
+    // Check if onboarding is required
+    const onboardingRequired = !pandit.whatsapp?.trim() || !pandit.aadhaarCardUrl?.trim();
+
+    console.log(`[Verify OTP] Pandit: ${pandit.email} | WhatsApp: "${pandit.whatsapp}" | Aadhaar: "${pandit.aadhaarCardUrl}" | Onboarding Required: ${onboardingRequired}`);
+
+    const response = NextResponse.json({
+      success: true,
+      message: "Login successful",
+      onboardingRequired
+>>>>>>> 35ce63ffac00d01bc70fb3b01f1c019ad39e5ec5
+    });
     response.cookies.set("mandirlok_pandit_token", token, {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
