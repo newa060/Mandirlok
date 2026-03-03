@@ -2,7 +2,8 @@
 
 import { useState, useEffect } from "react";
 import { useRouter, useParams } from "next/navigation";
-import { ChevronLeft, Save, Info, Plus, X, IndianRupee, Clock, Tag, Image as ImageIcon } from "lucide-react";
+import { ChevronLeft, Save, Info, Plus, X, IndianRupee, Clock, Tag, Image as ImageIcon, Trash2, HelpCircle } from "lucide-react";
+import CloudinaryUploader from "@/components/admin/CloudinaryUploader";
 import Link from "next/link";
 import { getPoojaById, updatePooja, getTemplesAdmin } from "@/lib/actions/admin";
 
@@ -17,12 +18,11 @@ export default function EditPoojaPage() {
     const [formData, setFormData] = useState({
         name: "",
         slug: "",
-        templeId: "",
+        templeIds: [] as string[],
         deity: "",
         emoji: "🪔",
         description: "",
         about: "",
-        price: 0,
         duration: "45-60 Minutes",
         benefits: [] as string[],
         includes: [] as string[],
@@ -155,11 +155,29 @@ export default function EditPoojaPage() {
                         <input required name="name" value={formData.name} onChange={handleChange} className="w-full px-4 py-2.5 rounded-xl border border-gray-200 outline-none" />
                     </div>
 
-                    <div className="space-y-1.5">
-                        <label className="text-xs font-bold text-gray-500 uppercase">Temple Assignment</label>
-                        <select name="templeId" value={formData.templeId} onChange={handleChange} className="w-full px-4 py-2.5 rounded-xl border border-gray-200 outline-none bg-white">
-                            {temples.map((t: any) => <option key={t._id} value={t._id}>{t.name}</option>)}
-                        </select>
+                    <div className="space-y-1.5 md:col-span-2">
+                        <label className="text-xs font-bold text-gray-500 uppercase">Temple Assignments</label>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 p-4 bg-gray-50 rounded-2xl border border-gray-100 max-h-48 overflow-y-auto">
+                            {temples.map((t: any) => (
+                                <label key={t._id} className="flex items-center gap-2 cursor-pointer group">
+                                    <input 
+                                        type="checkbox" 
+                                        checked={formData.templeIds.includes(t._id)}
+                                        onChange={(e) => {
+                                            const checked = e.target.checked;
+                                            setFormData(prev => ({
+                                                ...prev,
+                                                templeIds: checked 
+                                                    ? [...prev.templeIds, t._id]
+                                                    : prev.templeIds.filter(id => id !== t._id)
+                                            }));
+                                        }}
+                                        className="w-4 h-4 rounded border-gray-300 text-[#ff7f0a] focus:ring-[#ff7f0a]"
+                                    />
+                                    <span className="text-sm text-gray-600 group-hover:text-gray-900 transition-colors">{t.name}</span>
+                                </label>
+                            ))}
+                        </div>
                     </div>
 
                     <div className="space-y-1.5">
@@ -167,10 +185,7 @@ export default function EditPoojaPage() {
                         <input required name="deity" value={formData.deity} onChange={handleChange} className="w-full px-4 py-2.5 rounded-xl border border-gray-200" />
                     </div>
 
-                    <div className="space-y-1.5">
-                        <label className="text-xs font-bold text-gray-500 uppercase flex items-center gap-1"><IndianRupee size={12} /> Price (₹)</label>
-                        <input type="number" required name="price" value={formData.price} onChange={handleChange} className="w-full px-4 py-2.5 rounded-xl border border-gray-200" />
-                    </div>
+
 
                     <div className="space-y-1.5">
                         <label className="text-xs font-bold text-gray-500 uppercase flex items-center gap-1"><Clock size={12} /> Duration</label>
@@ -237,8 +252,21 @@ export default function EditPoojaPage() {
                     <div className="space-y-3">
                         <label className="text-xs font-bold text-gray-500 uppercase tracking-wider flex items-center gap-1"><ImageIcon size={14} /> Pooja Images (URLs)</label>
                         <div className="flex gap-2">
-                            <input value={newImageUrl} onChange={e => setNewImageUrl(e.target.value)} placeholder="Paste image URL here" className="flex-1 px-4 py-2.5 rounded-xl border border-gray-200 text-sm" />
-                            <button type="button" onClick={() => addArrayItem("images")} className="bg-gray-100 p-2.5 rounded-xl hover:bg-[#ff7f0a] hover:text-white transition-all"><Plus size={20} /></button>
+                            <div className="flex gap-2">
+                            <input
+                                value={newImageUrl}
+                                onChange={(e) => setNewImageUrl(e.target.value)}
+                                placeholder="Paste image URL here"
+                                className="flex-1 px-4 py-2.5 rounded-xl border border-gray-200 text-sm"
+                            />
+                            <CloudinaryUploader 
+                                onUploadSuccess={(url) => setNewImageUrl(url)}
+                                folder="poojas"
+                                resourceType="image"
+                                buttonText="Upload"
+                            />
+                        </div>
+    <button type="button" onClick={() => addArrayItem("images")} className="bg-gray-100 p-2.5 rounded-xl hover:bg-[#ff7f0a] hover:text-white transition-all"><Plus size={20} /></button>
                         </div>
                         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                             {formData.images.map(img => (

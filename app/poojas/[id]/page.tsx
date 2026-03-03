@@ -31,7 +31,6 @@ const dates = Array.from({ length: 7 }, (_, i) => {
     day: d.toLocaleDateString("en-IN", { weekday: "short" }),
     full: d.toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" }),
     value: `${yyyy}-${mm}-${dd}`,
-    slots: i === 2 ? 2 : i === 5 ? 1 : Math.floor(Math.random() * 5) + 3,
   };
 });
 
@@ -45,6 +44,7 @@ export default function PoojaDetailPage() {
   const [error, setError] = useState("");
 
   const [selectedDate, setSelectedDate] = useState<number | null>(null);
+  const [selectedTempleId, setSelectedTempleId] = useState<string | null>(null);
   const [selectedPackageIndex, setSelectedPackageIndex] = useState<number | null>(null);
   const [addedOfferings, setAddedOfferings] = useState<string[]>([]);
 
@@ -57,6 +57,9 @@ export default function PoojaDetailPage() {
         if (data.success) {
           setPooja(data.data.pooja);
           setOfferings(data.data.chadhavaItems || []);
+          if (data.data.pooja.templeIds?.length > 0) {
+            setSelectedTempleId(data.data.pooja.templeIds[0]._id);
+          }
         } else {
           setError(data.message || "Failed to load pooja details");
         }
@@ -113,7 +116,7 @@ export default function PoojaDetailPage() {
   // Create the cart link
   const cartQuery = new URLSearchParams();
   cartQuery.set("poojaId", pooja._id);
-  cartQuery.set("templeId", pooja.templeId?._id);
+  cartQuery.set("templeId", selectedTempleId || "");
   if (selectedDate !== null) {
     cartQuery.set("date", dates[selectedDate].value);
   }
@@ -173,7 +176,7 @@ export default function PoojaDetailPage() {
                         {pooja.name}
                       </h1>
                       <p className="text-sm text-[#ff7f0a] mt-0.5">
-                        🛕 {pooja.templeId?.name}
+                        {pooja.templeIds?.[0]?.name} {pooja.templeIds?.length > 1 && `+ ${pooja.templeIds.length - 1} more temples`}
                       </p>
                     </div>
                     <div className="flex flex-wrap items-center gap-4 mt-3 text-xs text-[#6b5b45]">
@@ -191,7 +194,7 @@ export default function PoojaDetailPage() {
                         <Clock size={12} className="text-[#ff7f0a]" />{" "}
                         {pooja.duration}
                       </span>
-                      <span>🧘 Experienced Pandit</span>
+                      <span>Experienced Pandit</span>
                     </div>
                   </div>
                 </div>
@@ -214,8 +217,33 @@ export default function PoojaDetailPage() {
                         key={b}
                         className="flex items-center gap-2 text-sm text-[#6b5b45]"
                       >
-                        <span className="text-[#ff7f0a] text-base">✦</span> {b}
+                        <span className="text-[#ff7f0a]">✦</span> {b}
                       </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Temple Selection */}
+              {pooja.templeIds && pooja.templeIds.length > 1 && (
+                <div className="bg-white border border-[#f0dcc8] rounded-2xl p-5 shadow-card">
+                  <h3 className="font-display font-semibold text-[#1a1209] mb-4 flex items-center gap-2">
+                    <svg className="w-[18px] h-[18px] text-[#ff7f0a]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" /></svg> 
+                    Choose Temple
+                  </h3>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    {pooja.templeIds.map((t: any) => (
+                      <button
+                        key={t._id}
+                        onClick={() => setSelectedTempleId(t._id)}
+                        className={`flex flex-col p-4 rounded-xl border transition-all text-left ${selectedTempleId === t._id
+                          ? "border-[#ff7f0a] bg-[#fff8f0] text-[#ff7f0a]"
+                          : "border-[#f0dcc8] text-[#6b5b45] hover:border-[#ffbd6e]"
+                          }`}
+                      >
+                        <span className="font-bold text-sm">{t.name}</span>
+                        <span className="text-[10px] opacity-70">{t.city}, {t.state}</span>
+                      </button>
                     ))}
                   </div>
                 </div>
@@ -239,17 +267,12 @@ export default function PoojaDetailPage() {
                     >
                       <span className="font-semibold mb-0.5">{d.day}</span>
                       <span className="text-lg font-bold">{d.date}</span>
-                      <span
-                        className={`text-[10px] ${d.slots <= 2 ? "text-red-500 font-medium" : "text-[#6b5b45]"}`}
-                      >
-                        {d.slots} slots
-                      </span>
                     </button>
                   ))}
                 </div>
                 {selectedDate !== null && (
                   <p className="mt-3 text-xs text-green-600 flex items-center gap-1">
-                    ✅ Date selected: {dates[selectedDate].full}
+                    Date selected: {dates[selectedDate].full}
                   </p>
                 )}
               </div>
@@ -357,7 +380,7 @@ export default function PoojaDetailPage() {
                       key={item}
                       className="flex items-center gap-2 text-sm text-[#6b5b45] py-1.5 border-b border-[#f0dcc8] last:border-0"
                     >
-                      <span className="text-[#ff7f0a]">✅</span> {item}
+                      <span className="text-[#ff7f0a]"></span> {item}
                     </div>
                   ))}
                 </div>
@@ -407,10 +430,12 @@ export default function PoojaDetailPage() {
 
                 {/* Total Price or Note */}
                 <div className="bg-[#fff8f0] border border-[#ffd9a8] rounded-xl p-3 mb-4">
-                  <div className="flex justify-between items-center text-sm font-semibold text-[#1a1209] mb-2">
-                    <span>{selectedPackageIndex !== null ? `Package: ${pooja.packages[selectedPackageIndex].name}` : "Base Pooja Price:"}</span>
-                    <span>₹{(selectedPackageIndex !== null ? pooja.packages[selectedPackageIndex].price : pooja.price)?.toLocaleString()}</span>
-                  </div>
+                  {selectedPackageIndex !== null && (
+                    <div className="flex justify-between items-center text-sm font-semibold text-[#1a1209] mb-2">
+                      <span>Package: {pooja.packages[selectedPackageIndex].name}</span>
+                      <span>₹{pooja.packages[selectedPackageIndex].price.toLocaleString()}</span>
+                    </div>
+                  )}
                   {addedOfferings.length > 0 && (
                     <div className="flex justify-between items-center text-sm font-semibold text-[#1a1209] mb-2 pt-2 border-t border-[#ffd9a8]">
                       <span>Offerings Total:</span>
@@ -422,27 +447,35 @@ export default function PoojaDetailPage() {
                   )}
                   <div className="flex justify-between items-center text-lg font-bold text-[#ff7f0a] mt-2 pt-2 border-t border-[#ffd9a8]">
                     <span>Total Payable:</span>
-                    <span>₹{((selectedPackageIndex !== null ? pooja.packages[selectedPackageIndex].price : pooja.price) + addedOfferings.reduce((sum, id) => {
+                    <span>₹{((selectedPackageIndex !== null ? pooja.packages[selectedPackageIndex].price : 0) + addedOfferings.reduce((sum, id) => {
                       const o = offerings.find((x: any) => x._id === id);
                       return sum + (o ? o.price : 0);
                     }, 0)).toLocaleString()}</span>
                   </div>
                 </div>
 
-                {/* Date indicator */}
-                {selectedDate !== null ? (
-                  <div className="bg-green-50 border border-green-200 rounded-xl p-3 mb-4 text-xs text-green-700 text-center">
-                    📅 Pooja on: <strong>{dates[selectedDate].full}</strong>
-                  </div>
-                ) : (
-                  <div className="bg-[#fff8f0] border border-[#ffd9a8] rounded-xl p-3 mb-4 text-xs text-[#ff7f0a] text-center">
-                    ⬆️ Please select a date above
-                  </div>
-                )}
+                {/* Date and Package indicators */}
+                <div className="space-y-2 mb-4">
+                  {selectedDate !== null ? (
+                    <div className="bg-green-50 border border-green-200 rounded-xl p-3 text-xs text-green-700 text-center">
+                      Pooja on: <strong>{dates[selectedDate].full}</strong>
+                    </div>
+                  ) : (
+                    <div className="bg-[#fff8f0] border border-[#ffd9a8] rounded-xl p-3 text-xs text-[#ff7f0a] text-center">
+                      Please select a date
+                    </div>
+                  )}
+
+                  {selectedPackageIndex === null && (
+                    <div className="bg-[#fff8f0] border border-[#ffd9a8] rounded-xl p-3 text-xs text-[#ff7f0a] text-center">
+                      Please select a package
+                    </div>
+                  )}
+                </div>
 
                 <Link
-                  href={selectedDate !== null ? cartLink : "#"}
-                  className={`btn-saffron w-full text-center text-sm block mb-3 ${selectedDate === null ? "opacity-60 pointer-events-none" : ""}`}
+                  href={(selectedDate !== null && selectedPackageIndex !== null && selectedTempleId !== null) ? cartLink : "#"}
+                  className={`btn-saffron w-full text-center text-sm block mb-3 ${(selectedDate === null || selectedPackageIndex === null || selectedTempleId === null) ? "opacity-60 pointer-events-none" : ""}`}
                 >
                   Proceed to Book →
                 </Link>
@@ -452,11 +485,6 @@ export default function PoojaDetailPage() {
                   Secured by Razorpay · 100% Safe
                 </p>
 
-                <div className="mt-4 pt-4 border-t border-[#f0dcc8] text-xs text-[#6b5b45] space-y-1.5">
-                  <p>📹 Pooja video on WhatsApp</p>
-                  <p>🧘 Experienced verified pandit</p>
-                  <p>↩️ Full refund if cancelled 24hrs before</p>
-                </div>
               </div>
             </div>
           </div>
